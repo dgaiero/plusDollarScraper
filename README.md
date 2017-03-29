@@ -13,5 +13,13 @@ Make sure you have
 * re
 * configparser
 
-This script will create a config file for CREDENTIALS. Make sure that you put your username with @calpoly.edu at the end, otherwise the script will fail. The date should also be formatted yyyy,m,d (no leading zeros.)
+This script will create a config file for CREDENTIALS. if you don't have a config.ini file, the script will make one on its first run and then quit. Make sure that you put your username with @calpoly.edu at the end, otherwise the script will fail. The date should also be formatted yyyy,m,d (no leading zeros.)
 Both of these issues will be fixed soon, as well as optimizing the script. Until then, enjoy!
+
+
+### Feature List
+- [ ] Check contents of config.ini file to make sure it is correct
+- [ ] Check username and append '@calpoly.edu' if necessary
+- [ ] Check date format and correct if necessary
+- [ ] Check cases the could cause script to crash
+- [ ] Find out what is wrong with script and fix (it's not as easy at it seems)
