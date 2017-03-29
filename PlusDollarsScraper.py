@@ -13,12 +13,12 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import *
+from random import randint
+import configparser
 
 # ========================================================
 # Variables
 # ========================================================
-USERNAME = "USERNAME" # Put Cal Poly username here with @calpoly.edu
-PASSWORD = "PASSWORD" # Put passsword here
 
 LOGIN_URL = "https://my.calpoly.edu/cas/login"
 URL = "https://cardcenter.calpoly.edu/student/welcome.php"
@@ -49,28 +49,25 @@ def returnBalance():
 # =========================================================
     result = session_requests.get(URL)
     soup = BeautifulSoup(result.text, "lxml")
-    try:
-        os.remove('page.txt')
-    except OSError:
-        pass
-    f = open("page.txt","w+")
+    fileName = "{}.webScrape".format(randint(50000,90000))
+    f = open(fileName,"w+")
     f.write(str(soup))
     f.close()
     #print (soup.find_all('td'))
-    fh = open("page.txt")
+    fh = open(fileName)
     balances = []
     for line in fh:
-        if re.search(r"\$.*</td>",line):
-            __inputData = line.rstrip().split("<")
-            __inputData = __inputData[1].split("$")
-            __processedData = __inputData
-            balances.extend(__processedData)
+      if re.search(r"\$.*</td>",line):
+          __inputData = line.rstrip().split("<")
+          __inputData = __inputData[1].split("$")
+          __processedData = __inputData
+          balances.extend(__processedData)
     balance = balances[1]
     fh.close()
     try:
-        os.remove('page.txt')
+      os.remove(fileName)
     except OSError:
-        pass
+      pass
     balance = float(balance)
     return balance
 
@@ -105,9 +102,32 @@ def daysUntil(__year,__month,__day):
         diff = future - today
         return diff.days
 
+def configSetup():
+    fileExists = os.path.isfile("config.ini")
+    config = configparser.ConfigParser()
+    config['CREDENTIALS'] = {'USERNAME': '','PASSWORD': ''}
+    config['END_DATE'] = {'END': '2017,6,16'}
+    if fileExists:
+        config.read('config.ini')
+        username = config['CREDENTIALS']['USERNAME']
+        password = config['CREDENTIALS']['PASSWORD']
+        end_date = config['END_DATE']['END']
+        CONFIGPARAM = [username, password, end_date]
+    else:
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
+        exit()
+    return CONFIGPARAM
+
 def main():
+    CONFIGPARAM = configSetup()
+    global USERNAME
+    global PASSWORD
+    USERNAME = CONFIGPARAM[0]
+    PASSWORD = CONFIGPARAM[1]
+    END = CONFIGPARAM[2].split(",")
     balance = returnBalance()
-    daysLeft = daysUntil(2017,6,16)
+    daysLeft = daysUntil(int(END[0]),int(END[1]),int(END[2]))
     amountToday = balance / daysLeft
     sendMail(round(amountToday, 2))
 
