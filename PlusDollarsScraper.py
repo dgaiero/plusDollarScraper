@@ -13,7 +13,6 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import *
-from random import randint
 import configparser
 
 # ========================================================
@@ -49,7 +48,7 @@ def returnBalance():
 # =========================================================
     result = session_requests.get(URL)
     soup = BeautifulSoup(result.text, "lxml")
-    fileName = "{}.webScrape".format(randint(50000,90000))
+    fileName = "temp.webScrape"
     f = open(fileName,"w+")
     f.write(str(soup))
     f.close()
