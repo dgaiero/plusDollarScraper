@@ -18,9 +18,9 @@ Both of these issues will be fixed soon, as well as optimizing the script. Until
 
 
 ### Feature List
-~~- [ ] Check contents of config.ini file to make sure it is correct~~
-~~- [ ] Check username and append '@calpoly.edu' if necessary~~
-~~- [ ] Check date format and correct if necessary~~
+- [ ] ~~Check contents of config.ini file to make sure it is correct~~
+- [ ] ~~Check username and append '@calpoly.edu' if necessary~~
+- [ ] ~~Check date format and correct if necessary~~
 - [ ] Check cases the could cause script to crash
 - [ ] Find out what is wrong with script and fix (it's not as easy at it seems)
 - [x] Switch between text and email
