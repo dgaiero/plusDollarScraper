@@ -1,5 +1,5 @@
-# Hack Tech 2017
-# Plus Dollars Scrape
+# Plus Dollar Scraper to email/SMS
+# Dominic Gaiero, Josiah Pang
 # Based on "Logging in with Requests" article by Stephen Brennan
 # ========================================================
 # Import libraries
