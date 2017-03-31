@@ -33,89 +33,103 @@ def configSetup():
     global USERNAME, PASSWORD, EMAIL_USERNAME, EMAIL_PASSWORD, EMAIL_SERVER
     global EMAIL_PORT, EMAIL_TO, SEND_BY, SEND_METHOD, END_DATE, SMS_ACCOUNT_SID
     global SMS_AUTH_TOKEN, SMS_SENDING_NUMBER, SMS_RECEIVING_NUMBER
-    fileExists = os.path.isfile("config.ini")
-    config = configparser.ConfigParser()
-    config['CALPOLY_CREDENTIALS'] = {'USERNAME': '', 'PASSWORD': ''}
-    config['EMAIL_SETTINGS'] = {'LOGIN': '', 'PASSWORD': '',
-                                'SERVER': 'smtp.office365.com', 'PORT': '587', 'TO': ''}
-    config['SMS_SETTINGS'] = {
+    # checks if the config file already exists
+    _fileExists = os.path.isfile("config.ini")
+    _config = configparser.ConfigParser()  # initalizes config parser
+
+    # Dictionary for config file
+
+    _config['CALPOLY_CREDENTIALS'] = {'USERNAME': '', 'PASSWORD': ''}
+    _config['EMAIL_SETTINGS'] = {'LOGIN': '', 'PASSWORD': '',
+                                 'SERVER': 'smtp.office365.com', 'PORT': '587', 'TO': ''}
+    _config['SMS_SETTINGS'] = {
         'ACCOUNT_SID': '', 'AUTH_TOKEN': '', 'SENDING_NUMBER': '', 'RECEIVING_NUMBER': ''}
-    config['OPTIONS'] = {'SEND_BY': 'EMAIL', 'END': '2017,6,16'}
-    if fileExists:
+    _config['OPTIONS'] = {'SEND_BY': 'EMAIL', 'END': '2017,6,16'}
+    if fileExists:  # If the file exists, then parse the fields and set to global variables
         config.read('config.ini')
-        USERNAME = config['CALPOLY_CREDENTIALS']['USERNAME']
-        PASSWORD = config['CALPOLY_CREDENTIALS']['PASSWORD']
-        EMAIL_USERNAME = config['EMAIL_SETTINGS']['LOGIN']
-        EMAIL_PASSWORD = config['EMAIL_SETTINGS']['PASSWORD']
-        EMAIL_SERVER = config['EMAIL_SETTINGS']['SERVER']
-        EMAIL_PORT = int(config['EMAIL_SETTINGS']['PORT'])
-        EMAIL_TO = config['EMAIL_SETTINGS']['TO']
-        SMS_ACCOUNT_SID = config['SMS_SETTINGS']['ACCOUNT_SID']
-        SMS_AUTH_TOKEN = config['SMS_SETTINGS']['AUTH_TOKEN']
-        SMS_SENDING_NUMBER = config['SMS_SETTINGS']['SENDING_NUMBER']
-        SMS_RECEIVING_NUMBER = config['SMS_SETTINGS']['RECEIVING_NUMBER']
-        SEND_BY = config['OPTIONS']['SEND_BY']
-        if SEND_BY == "EMAIL":
+        USERNAME = _config['CALPOLY_CREDENTIALS']['USERNAME']
+        PASSWORD = _config['CALPOLY_CREDENTIALS']['PASSWORD']
+        EMAIL_USERNAME = _config['EMAIL_SETTINGS']['LOGIN']
+        EMAIL_PASSWORD = _config['EMAIL_SETTINGS']['PASSWORD']
+        EMAIL_SERVER = _config['EMAIL_SETTINGS']['SERVER']
+        EMAIL_PORT = int(_config['EMAIL_SETTINGS']['PORT'])
+        EMAIL_TO = _config['EMAIL_SETTINGS']['TO']
+        SMS_ACCOUNT_SID = _config['SMS_SETTINGS']['ACCOUNT_SID']
+        SMS_AUTH_TOKEN = _config['SMS_SETTINGS']['AUTH_TOKEN']
+        SMS_SENDING_NUMBER = _config['SMS_SETTINGS']['SENDING_NUMBER']
+        SMS_RECEIVING_NUMBER = _config['SMS_SETTINGS']['RECEIVING_NUMBER']
+        # Makes value case insensitive
+        _sendBy = _config['OPTIONS']['_sendBy'].upper()
+        if _sendBy == "EMAIL":  # SEND_METHOD defaults to 1 (Email)
             SEND_METHOD = 1
-        elif SEND_BY == "SMS":
+        elif _sendBy == "SMS":
             SEND_METHOD = 2
         else:
             SEND_METHOD = 1
-        END_DATE = config['OPTIONS']['END'].split(",")
-    else:
-        with open('config.ini', 'w') as configfile:
-            config.write(configfile)
+        END_DATE = _config['OPTIONS']['END'].split(
+            ",")  # Split end date into yyyy,m,d
+    else:  # If the config file does not exist, this writes config.ini and terminates the program
+        with open('config.ini', 'w') as _configfile:
+            config.write(_configfile)
         exit()
 
 # ========================================================
-# Main Program
+# Scrapes balance
 # ========================================================
 
 
 def returnBalance():
-    session_requests = requests.session()
-    result = session_requests.get(LOGIN_URL)
+    session_requests = requests.session()  # Initalize web session
+    result = session_requests.get(LOGIN_URL)  # Get page data for login
     login_html = lxml.html.fromstring(result.text)
+    # Looks for all hidden inputs (mainly for CSRF token)
     hidden_inputs = login_html.xpath(r'//form//input[@type="hidden"]')
 
 # ========================================================
 # Dictionary for login
 # ========================================================
 
+    # Add the hidden inputs to login dictionary
     form = {x.attrib["name"]: x.attrib["value"] for x in hidden_inputs}
+    # Add global username and password to login dictionary
     form['username'] = USERNAME
     form['password'] = PASSWORD
-    result = session_requests.post(
+    result = session_requests.post(  # post data to login URL
         LOGIN_URL,
         data=form,
-        #headers = dict(referer = LOGIN_URL)
     )
 
 # =========================================================
 # Scrape url
 # =========================================================
 
+    # Read data from CSGOLD page (using session)
     result = session_requests.get(URL)
-    soup = BeautifulSoup(result.text, "lxml")
-    fileName = "temp.webScrape"
-    f = open(fileName, "w+")
+
+    # This part should be unnecessary, but I can't seem to figure out
+    # how to do it another way
+
+    soup = BeautifulSoup(result.text, "lxml")  # Convert to regular text
+    fileName = "temp.webScrape"  # Create a temp file
+    f = open(fileName, "w+")  # open and fill temp file with the webbpage
     f.write(str(soup))
     f.close()
-    fh = open(fileName)
+    fh = open(fileName)  # Opens file again, with different rights (r != w)
     balances = []
-    for line in fh:
+    for line in fh:  # Reads the webpage and looks for $xxxxxx</td>
         if re.search(r"\$.*</td>", line):
-            __inputData = line.rstrip().split("<")
-            __inputData = __inputData[1].split("$")
-            __processedData = __inputData
-            balances.extend(__processedData)
+            _inputData = line.rstrip().split("<")
+            _inputData = _inputData[1].split("$")
+            _processedData = _inputData  # Splits the data so it returns just a number
+            # Adds the number to end of balances
+            balances.extend(_processedData)
     balance = balances[1]
     fh.close()
-    try:
+    try:  # Removes the temp file
         os.remove(fileName)
     except OSError:
         pass
-    balance = float(balance)
+    balance = float(balance)  # Converts str to float
     return balance
 
 # ========================================================
@@ -123,14 +137,14 @@ def returnBalance():
 # ========================================================
 
 
-def sendMail(__message):
+def sendMail(_message):
     msg = MIMEMultipart()
-    msg['From'] = EMAIL_USERNAME
+    msg['From'] = EMAIL_USERNAME  # Adds the pertinant values to msg dictionary
     msg['To'] = EMAIL_TO
     msg['Subject'] = "Your Daily Balance"
-    msg.attach(MIMEText(__message, 'plain'))
+    msg.attach(MIMEText(_message, 'plain'))
     server = smtplib.SMTP(EMAIL_SERVER, EMAIL_PORT)
-    server.starttls()
+    server.starttls()  # change this depending on the server requirements.
     server.login(EMAIL_USERNAME, EMAIL_PASSWORD)
     EMAIL_MESSAGE = msg.as_string()
     server.sendmail(EMAIL_USERNAME, EMAIL_TO, EMAIL_MESSAGE)
@@ -141,11 +155,10 @@ def sendMail(__message):
 # ========================================================
 
 
-def sendSMS(__message):
+def sendSMS(_message):
 
     client = TwilioRestClient(SMS_ACCOUNT_SID, SMS_AUTH_TOKEN)
-
-    message = client.messages.create(body=__message,
+    message = client.messages.create(body=_message,
                                      to=SMS_RECEIVING_NUMBER,
                                      from_=SMS_SENDING_NUMBER)
 
@@ -154,25 +167,32 @@ def sendSMS(__message):
 # ========================================================
 
 
-def daysUntil(__year, __month, __day):
-    today = date.today()
-    future = date(__year, __month, __day)
-    diff = future - today
-    return diff.days
+def daysUntil(_year, _month, _day):
+    _today = date.today()
+    # The date format has to have (a) no leading zeros and (b) must be
+    # formatted yyyy,m,d
+    _future = date(_year, _month, _day)
+    _diff = _future - _today
+    return _diff.days
+
+# ========================================================
+# Main Function
+# ========================================================
 
 
 def main():
-    configSetup()
+    configSetup()  # Run configsetup to return global variables
     balance = returnBalance()
+    # Everything from config comes as str, must convert to int.
     daysLeft = daysUntil(int(END_DATE[0]), int(END_DATE[1]), int(END_DATE[2]))
-    amountToday = balance / daysLeft
-    __endDate = "{}/{}/{}".format(END_DATE[0], END_DATE[1], END_DATE[2])
-    __message = "Today you have ${} to spend. \n You have ${} left. \n There are {} days left until the end date ({}).".format(
-        round(amountToday, 2), round(balance, 2), daysLeft, __endDate)
-    if SEND_METHOD == 1:
-        sendMail(__message)
-    elif SEND_METHOD == 2:
-        sendSMS(__message)
+    amountToday = balance / daysLeft  # Just some simple division
+    _endDate = "{}/{}/{}".format(END_DATE[2], END_DATE[1], END_DATE[0])
+    _message = "Today you have ${} to spend. \n You have ${} left. \n There are {} days left until the end date ({}).".format(
+        round(amountToday, 2), round(balance, 2), daysLeft, _endDate)
+    if SEND_METHOD == 1:  # 1 = Email
+        sendMail(_message)
+    elif SEND_METHOD == 2:  # 2 = SMS
+        sendSMS(_message)
 
 
 if __name__ == '__main__':
