@@ -1,4 +1,5 @@
 # Cal Poly CSGold Plus Dollar Web Scraper
+## Sends email with the amount of plus dollars left (using CSGOLD for CPSLO)
 This program is designed to scrape the Cal Poly CSGold webpage and send an email with the amount of dollars that can be spent that day. The script has no built in automation. You must either use windows task scheduler or a cron job.
 
 This script (as of right now) is very poorly written. Please, if you know how to, make it better. There were some parts that I could not get working, and had to "hack" to get it to work. Basically, it creates a temp file with the contents of the page and then parses that. Ideally, it would just use the live page and would not require a temp file. (The temp file will get deleted once the program is done.)
