@@ -12,6 +12,7 @@ Make sure you have
 * bs4
 * re
 * configparser
+* twilio
 
 This script will create a config file for CREDENTIALS. if you don't have a config.ini file, the script will make one on its first run and then quit. Make sure that you put your username with @calpoly.edu at the end, otherwise the script will fail. The date should also be formatted yyyy,m,d (no leading zeros.)
 Both of these issues will be fixed soon, as well as optimizing the script. Until then, enjoy!
