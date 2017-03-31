@@ -45,8 +45,8 @@ def configSetup():
     _config['SMS_SETTINGS'] = {
         'ACCOUNT_SID': '', 'AUTH_TOKEN': '', 'SENDING_NUMBER': '', 'RECEIVING_NUMBER': ''}
     _config['OPTIONS'] = {'SEND_BY': 'EMAIL', 'END': '2017,6,16'}
-    if fileExists:  # If the file exists, then parse the fields and set to global variables
-        config.read('config.ini')
+    if _fileExists:  # If the file exists, then parse the fields and set to global variables
+        _config.read('config.ini')
         USERNAME = _config['CALPOLY_CREDENTIALS']['USERNAME']
         PASSWORD = _config['CALPOLY_CREDENTIALS']['PASSWORD']
         EMAIL_USERNAME = _config['EMAIL_SETTINGS']['LOGIN']
@@ -59,7 +59,7 @@ def configSetup():
         SMS_SENDING_NUMBER = _config['SMS_SETTINGS']['SENDING_NUMBER']
         SMS_RECEIVING_NUMBER = _config['SMS_SETTINGS']['RECEIVING_NUMBER']
         # Makes value case insensitive
-        _sendBy = _config['OPTIONS']['_sendBy'].upper()
+        _sendBy = _config['OPTIONS']['SEND_BY'].upper()
         if _sendBy == "EMAIL":  # SEND_METHOD defaults to 1 (Email)
             SEND_METHOD = 1
         elif _sendBy == "SMS":
@@ -70,7 +70,7 @@ def configSetup():
             ",")  # Split end date into yyyy,m,d
     else:  # If the config file does not exist, this writes config.ini and terminates the program
         with open('config.ini', 'w') as _configfile:
-            config.write(_configfile)
+            _config.write(_configfile)
         exit()
 
 # ========================================================
