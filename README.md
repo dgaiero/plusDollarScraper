@@ -14,11 +14,12 @@ Make sure you have
 * configparser
 * twilio
 
-This script will create a config file. If you don't have a config.ini file, the script will make one on its first run and then quit. Make sure that you put your username with @calpoly.edu at the end (at least for the email login).Also, the script is configured to use TLS security, so if you use another SMTP server, keep that in mind. If you do not have a twilio account, then leave that section empty on the config.ini file. Just make sure that you set the SEND_BY to 'EMAIL'. The other option is 'SMS'. The date should also be formatted yyyy,m,d (no leading zeros.)
+This script will create a config file. If you don't have a config.ini file, the script will make one on its first run and then quit. Make sure that you put your username with @calpoly.edu at the end (at least for the email login).Also, the script is configured to use TLS security, so if you use another SMTP server, keep that in mind. If you do not have a twilio account, then leave that section empty on the config.ini file. Just make sure that you set the SEND_BY to 'EMAIL'. The other option is 'SMS'. The date should also be formatted yyyy,m,d (no leading zeros.) The password is just encoded with base64. It is not encrypted, so don't give the config.ini file to anyone.
 Both of these issues will be fixed soon, as well as optimizing the script. Until then, enjoy!
 
 
 ### Feature List
+- [x] Add base64 encoding to the password
 - [ ] ~~Check contents of config.ini file to make sure it is correct~~
 - [ ] ~~Check username and append '@calpoly.edu' if necessary~~
 - [ ] ~~Check date format and correct if necessary~~
