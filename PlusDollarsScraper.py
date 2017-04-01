@@ -15,6 +15,7 @@ from email.mime.text import MIMEText
 from datetime import *
 import configparser
 from twilio.rest import TwilioRestClient
+import base64
 
 
 # ========================================================
@@ -37,20 +38,14 @@ def configSetup():
     _fileExists = os.path.isfile("config.ini")
     _config = configparser.ConfigParser()  # initalizes config parser
 
-    # Dictionary for config file
-
-    _config['CALPOLY_CREDENTIALS'] = {'USERNAME': '', 'PASSWORD': ''}
-    _config['EMAIL_SETTINGS'] = {'LOGIN': '', 'PASSWORD': '',
-                                 'SERVER': 'smtp.office365.com', 'PORT': '587', 'TO': ''}
-    _config['SMS_SETTINGS'] = {
-        'ACCOUNT_SID': '', 'AUTH_TOKEN': '', 'SENDING_NUMBER': '', 'RECEIVING_NUMBER': ''}
-    _config['OPTIONS'] = {'SEND_BY': 'EMAIL', 'END': '2017,6,16'}
     if _fileExists:  # If the file exists, then parse the fields and set to global variables
         _config.read('config.ini')
         USERNAME = _config['CALPOLY_CREDENTIALS']['USERNAME']
-        PASSWORD = _config['CALPOLY_CREDENTIALS']['PASSWORD']
+        PASSWORD = base64.b64decode(
+            _config['CALPOLY_CREDENTIALS']['PASSWORD']).decode("utf-8")
         EMAIL_USERNAME = _config['EMAIL_SETTINGS']['LOGIN']
-        EMAIL_PASSWORD = _config['EMAIL_SETTINGS']['PASSWORD']
+        EMAIL_PASSWORD = base64.b64decode(
+            _config['EMAIL_SETTINGS']['PASSWORD']).decode("utf-8")
         EMAIL_SERVER = _config['EMAIL_SETTINGS']['SERVER']
         EMAIL_PORT = int(_config['EMAIL_SETTINGS']['PORT'])
         EMAIL_TO = _config['EMAIL_SETTINGS']['TO']
@@ -68,10 +63,52 @@ def configSetup():
             SEND_METHOD = 1
         END_DATE = _config['OPTIONS']['END'].split(
             ",")  # Split end date into yyyy,m,d
-    else:  # If the config file does not exist, this writes config.ini and terminates the program
+        print(PASSWORD)
+        print(EMAIL_PASSWORD)
+    else:  # If the config file does not exist, this writes config.ini
+        print("The following prompots will setup the config.ini file.\nThis will only run once.")
+        USERNAME = input('Enter your cal poly username (with @calpoly.edu): ')
+        PASSWORD = input('Enter your cal poly password: ')
+        _passwordEncode = base64.b64encode(
+            bytes(PASSWORD, "utf-8")).decode("utf-8")
+        EMAIL_USERNAME = input(
+            "Enter your email address (or leave blank for CALPOLY email) : ") or USERNAME
+        EMAIL_PASSWORD = input(
+            "Enter your password (or leave blank for CALPOLY password) : ") or PASSWORD
+        _emailPasswordEncode = base64.b64encode(
+            bytes(EMAIL_PASSWORD, "utf-8")).decode("utf-8")
+        EMAIL_SERVER = input(
+            "Enter the email server (or leave blank for smtp.office365.com) : ") or "smtp.office365.com"
+        EMAIL_PORT = input(
+            "Enter the email server port (or leave blank for CALPOLY port 587) : ") or "587"
+        EMAIL_TO = input(
+            "Enter the receiving email address (or leave blank for CALPOLY email) : ") or USERNAME
+        SMS_ACCOUNT_SID = input("Enter your Twilio account SID: ")
+        SMS_AUTH_TOKEN = input("Enter your Twilio auth token: ")
+        SMS_SENDING_NUMBER = input("Enter your phone number (with +1): ")
+        SMS_RECEIVING_NUMBER = input("Enter your Twilio number (with +1): ")
+        _sendBy = input(
+            "How do you want to recieve notifications? 'EMAIL' or 'SMS': ").upper() or "EMAIL"
+        END_DATE = input(
+            "What is the end date? (yyyy,m,d). No leading zeros: ") or "2017,6,16"
+        if _sendBy == "EMAIL":  # SEND_METHOD defaults to 1 (Email)
+            SEND_METHOD = 1
+        elif _sendBy == "SMS":
+            SEND_METHOD = 2
+        else:
+            SEND_METHOD = 1
+        # Dictionary for config file
+
+        _config['CALPOLY_CREDENTIALS'] = {
+            'USERNAME': USERNAME, 'PASSWORD': _passwordEncode}
+        _config['EMAIL_SETTINGS'] = {'LOGIN': EMAIL_USERNAME, 'PASSWORD': _emailPasswordEncode,
+                                     'SERVER': EMAIL_SERVER, 'PORT': EMAIL_PORT, 'TO': EMAIL_TO}
+        _config['SMS_SETTINGS'] = {
+            'ACCOUNT_SID': SMS_ACCOUNT_SID, 'AUTH_TOKEN': SMS_AUTH_TOKEN, 'SENDING_NUMBER': SMS_SENDING_NUMBER, 'RECEIVING_NUMBER': SMS_RECEIVING_NUMBER}
+        _config['OPTIONS'] = {'SEND_BY': _sendBy, 'END': END_DATE}
+
         with open('config.ini', 'w') as _configfile:
             _config.write(_configfile)
-        exit()
 
 # ========================================================
 # Scrapes balance
