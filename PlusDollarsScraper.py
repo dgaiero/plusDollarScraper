@@ -63,8 +63,6 @@ def configSetup():
             SEND_METHOD = 1
         END_DATE = _config['OPTIONS']['END'].split(
             ",")  # Split end date into yyyy,m,d
-        print(PASSWORD)
-        print(EMAIL_PASSWORD)
     else:  # If the config file does not exist, this writes config.ini
         print("The following prompots will setup the config.ini file.\nThis will only run once.")
         USERNAME = input('Enter your cal poly username (with @calpoly.edu): ')
