@@ -35,50 +35,50 @@ def configSetup():
     global EMAIL_PORT, EMAIL_TO, SEND_BY, SEND_METHOD, END_DATE, SMS_ACCOUNT_SID
     global SMS_AUTH_TOKEN, SMS_SENDING_NUMBER, SMS_RECEIVING_NUMBER, IFTTT_SECRETKEY, IFTTT_EVENTNAME
     # checks if the config file already exists
-    _fileExists = os.path.isfile("config.ini")
-    _config = configparser.ConfigParser()  # initalizes config parser
+    fileExists = os.path.isfile("config.ini")
+    config = configparser.ConfigParser()  # initalizes config parser
 
-    if _fileExists:  # If the file exists, then parse the fields and set to global variables
-        _config.read('config.ini')
-        USERNAME = _config['CALPOLY_CREDENTIALS']['USERNAME']
+    if fileExists:  # If the file exists, then parse the fields and set to global variables
+        config.read('config.ini')
+        USERNAME = config['CALPOLY_CREDENTIALS']['USERNAME']
         PASSWORD = base64.b64decode(
-            _config['CALPOLY_CREDENTIALS']['PASSWORD']).decode("utf-8")
-        EMAIL_USERNAME = _config['EMAIL_SETTINGS']['LOGIN']
+            config['CALPOLY_CREDENTIALS']['PASSWORD']).decode("utf-8")
+        EMAIL_USERNAME = config['EMAIL_SETTINGS']['LOGIN']
         EMAIL_PASSWORD = base64.b64decode(
-            _config['EMAIL_SETTINGS']['PASSWORD']).decode("utf-8")
-        EMAIL_SERVER = _config['EMAIL_SETTINGS']['SERVER']
-        EMAIL_PORT = int(_config['EMAIL_SETTINGS']['PORT'])
-        EMAIL_TO = _config['EMAIL_SETTINGS']['TO']
-        SMS_ACCOUNT_SID = _config['SMS_SETTINGS']['ACCOUNT_SID']
-        SMS_AUTH_TOKEN = _config['SMS_SETTINGS']['AUTH_TOKEN']
-        SMS_SENDING_NUMBER = _config['SMS_SETTINGS']['SENDING_NUMBER']
-        SMS_RECEIVING_NUMBER = _config['SMS_SETTINGS']['RECEIVING_NUMBER']
-        IFTTT_SECRETKEY = _config['IFTTT_SETTINGS']['IFTTT_SECRETKEY']
-        IFTTT_EVENTNAME = _config['IFTTT_SETTINGS']['IFTTT_EVENTNAME']
+            config['EMAIL_SETTINGS']['PASSWORD']).decode("utf-8")
+        EMAIL_SERVER = config['EMAIL_SETTINGS']['SERVER']
+        EMAIL_PORT = int(config['EMAIL_SETTINGS']['PORT'])
+        EMAIL_TO = config['EMAIL_SETTINGS']['TO']
+        SMS_ACCOUNT_SID = config['SMS_SETTINGS']['ACCOUNT_SID']
+        SMS_AUTH_TOKEN = config['SMS_SETTINGS']['AUTH_TOKEN']
+        SMS_SENDING_NUMBER = config['SMS_SETTINGS']['SENDING_NUMBER']
+        SMS_RECEIVING_NUMBER = config['SMS_SETTINGS']['RECEIVING_NUMBER']
+        IFTTT_SECRETKEY = config['IFTTT_SETTINGS']['IFTTT_SECRETKEY']
+        IFTTT_EVENTNAME = config['IFTTT_SETTINGS']['IFTTT_EVENTNAME']
         # Makes value case insensitive
-        _sendBy = _config['OPTIONS']['SEND_BY'].upper()
-        if _sendBy == "EMAIL":  # SEND_METHOD defaults to 1 (Email)
+        sendBy = config['OPTIONS']['SEND_BY'].upper()
+        if sendBy == "EMAIL":  # SEND_METHOD defaults to 1 (Email)
             SEND_METHOD = 1
-        elif _sendBy == "SMS":
+        elif sendBy == "SMS":
             SEND_METHOD = 2
-        elif _sendBy == "IFTTT":
+        elif sendBy == "IFTTT":
             SEND_METHOD = 3
         else:
             SEND_METHOD = 1
-        END_DATE = _config['OPTIONS']['END'].split(
+        END_DATE = config['OPTIONS']['END'].split(
             ",")  # Split end date into yyyy,m,d
     else:  # If the config file does not exist, this writes config.ini
         print("The following prompots will setup the config.ini file.\nThis will only run once.\n\n")
         USERNAME = input('Enter your cal poly username (with @calpoly.edu): ')
         PASSWORD = input('Enter your cal poly password: ')
-        _passwordEncode = base64.b64encode(
+        passwordEncode = base64.b64encode(
             bytes(PASSWORD, "utf-8")).decode("utf-8")
         print("If you do not want to use a third party email service, then leave the following sections blank\n")
         EMAIL_USERNAME = input(
             "Enter your email address (or leave blank for CALPOLY email) : ") or USERNAME
         EMAIL_PASSWORD = input(
             "Enter your password (or leave blank for CALPOLY password) : ") or PASSWORD
-        _emailPasswordEncode = base64.b64encode(
+        emailPasswordEncode = base64.b64encode(
             bytes(EMAIL_PASSWORD, "utf-8")).decode("utf-8")
         EMAIL_SERVER = input(
             "Enter the email server (or leave blank for smtp.office365.com) : ") or "smtp.office365.com"
@@ -94,32 +94,32 @@ def configSetup():
         print("If you do not want to use IFTTT, then leave the following sections blank.\n")
         IFTTT_SECRETKEY = input("Enter your IFTTT Secret Key: ")
         IFTTT_EVENTNAME = input("Enter your IFTTT Event Name: ")
-        _sendBy = input(
+        sendBy = input(
             "How do you want to recieve notifications? 'EMAIL' 'SMS' or 'IFTTT': ").upper() or "EMAIL"
         END_DATE = input(
             "What is the end date? (yyyy,m,d). No leading zeros: ") or "2017,6,16"
-        if _sendBy == "EMAIL":  # SEND_METHOD defaults to 1 (Email)
+        if sendBy == "EMAIL":  # SEND_METHOD defaults to 1 (Email)
             SEND_METHOD = 1
-        elif _sendBy == "SMS":
+        elif sendBy == "SMS":
             SEND_METHOD = 2
-        elif _sendBy == "IFTTT":
+        elif sendBy == "IFTTT":
             SEND_METHOD = 3
         else:
             SEND_METHOD = 1
         # Dictionary for config file
 
-        _config['CALPOLY_CREDENTIALS'] = {
-            'USERNAME': USERNAME, 'PASSWORD': _passwordEncode}
-        _config['EMAIL_SETTINGS'] = {'LOGIN': EMAIL_USERNAME, 'PASSWORD': _emailPasswordEncode,
+        config['CALPOLY_CREDENTIALS'] = {
+            'USERNAME': USERNAME, 'PASSWORD': passwordEncode}
+        config['EMAIL_SETTINGS'] = {'LOGIN': EMAIL_USERNAME, 'PASSWORD': emailPasswordEncode,
                                      'SERVER': EMAIL_SERVER, 'PORT': EMAIL_PORT, 'TO': EMAIL_TO}
-        _config['SMS_SETTINGS'] = {
+        config['SMS_SETTINGS'] = {
             'ACCOUNT_SID': SMS_ACCOUNT_SID, 'AUTH_TOKEN': SMS_AUTH_TOKEN, 'SENDING_NUMBER': SMS_SENDING_NUMBER, 'RECEIVING_NUMBER': SMS_RECEIVING_NUMBER}
-        _config['IFTTT_SETTINGS'] = {
+        config['IFTTT_SETTINGS'] = {
             'IFTTT_SECRETKEY': IFTTT_SECRETKEY, 'IFTTT_EVENTNAME': IFTTT_EVENTNAME}
-        _config['OPTIONS'] = {'SEND_BY': _sendBy, 'END': END_DATE}
+        config['OPTIONS'] = {'SEND_BY': sendBy, 'END': END_DATE}
 
-        with open('config.ini', 'w') as _configfile:
-            _config.write(_configfile)
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
 
 # ========================================================
 # Scrapes balance
@@ -166,11 +166,11 @@ def returnBalance():
     balances = []
     for line in fh:  # Reads the webpage and looks for $xxxxxx</td>
         if re.search(r"\$.*</td>", line):
-            _inputData = line.rstrip().split("<")
-            _inputData = _inputData[1].split("$")
-            _processedData = _inputData  # Splits the data so it returns just a number
+            inputData = line.rstrip().split("<")
+            inputData = inputData[1].split("$")
+            processedData = inputData  # Splits the data so it returns just a number
             # Adds the number to end of balances
-            balances.extend(_processedData)
+            balances.extend(processedData)
     balance = balances[1]
     fh.close()
     try:  # Removes the temp file
@@ -185,7 +185,7 @@ def returnBalance():
 # ========================================================
 
 
-def sendEMail(_message):
+def sendEMail(message):
     msg = MIMEMultipart()
     msg['From'] = EMAIL_USERNAME  # Adds the pertinant values to msg dictionary
     msg['To'] = EMAIL_TO
@@ -203,7 +203,7 @@ def sendEMail(_message):
 # ========================================================
 
 
-def sendSMS(_message):
+def sendSMS(message):
 
     client = TwilioRestClient(SMS_ACCOUNT_SID, SMS_AUTH_TOKEN)
     message = client.messages.create(body=_message,
@@ -215,10 +215,10 @@ def sendSMS(_message):
 # ========================================================
 
 
-def sendIFTTT(_message):
+def sendIFTTT(message):
 
     report = {}
-    report["value1"] = _message
+    report["value1"] = message
     url = "https://maker.ifttt.com/trigger/{}/with/key/{}".format(
         IFTTT_EVENTNAME, IFTTT_SECRETKEY)
     requests.post(url, data=report)
@@ -228,13 +228,13 @@ def sendIFTTT(_message):
 # ========================================================
 
 
-def daysUntil(_year, _month, _day):
-    _today = date.today()
+def daysUntil(year, month, day):
+    today = date.today()
     # The date format has to have (a) no leading zeros and (b) must be
     # formatted yyyy,m,d
-    _future = date(_year, _month, _day)
-    _diff = _future - _today
-    return _diff.days
+    future = date(year, month, day)
+    diff = future - today
+    return diff.days
 
 # ========================================================
 # Main Function
@@ -247,15 +247,15 @@ def main():
     # Everything from config comes as str, must convert to int.
     daysLeft = daysUntil(int(END_DATE[0]), int(END_DATE[1]), int(END_DATE[2]))
     amountToday = balance / daysLeft  # Just some simple division
-    _endDate = "{}/{}/{}".format(END_DATE[2], END_DATE[1], END_DATE[0])
-    _message = "Today you have ${} to spend. \n You have ${} left. \n There are {} days left until the end date ({}).".format(
-        round(amountToday, 2), round(balance, 2), daysLeft, _endDate)
+    endDate = "{}/{}/{}".format(END_DATE[2], END_DATE[1], END_DATE[0])
+    message = "Today you have ${} to spend. \n You have ${} left. \n There are {} days left until the end date ({}).".format(
+        round(amountToday, 2), round(balance, 2), daysLeft, endDate)
     if SEND_METHOD == 1:  # 1 = Email
-        sendEMail(_message)
+        sendEMail(message)
     elif SEND_METHOD == 2:  # 2 = SMS
-        sendSMS(_message)
+        sendSMS(message)
     elif SEND_METHOD == 3:
-        sendIFTTT(_message)
+        sendIFTTT(message)
 
 
 if __name__ == '__main__':
