@@ -15,7 +15,6 @@ Make sure you have
 * twilio
 
 On first run, this script will run you through creating a config.ini file. When you put your username in, make sure to add the @calpoly.edu part (only necessary if you are planning on using cal poly email). If you do not want to use a third party email service or the cal poly email serivice, then leave the email part blank when going through the config file. It will fill in this information with the cal poly information, but if the send method isn't set to email, that information will not be used. If you do not have a Twilio account, then leave that section blank. If however, you do, make sure to add the country code (+1 for United States) in front of the phone number. The same applies for IFTTT. When you input the SEND_BY option, you should be able to type the input in either case, and it should correct to UPPER case. The three options are EMAIL, SMS, IFTTT. For the date formatting, it needs to be yyyy,m,d (notice no leading zeros). The password in the config.ini file in encoded with base64 so nobody can just glance at the file and determine the password.
-Both of these issues will be fixed soon, as well as optimizing the script. Until then, enjoy!
 
 
 ### Feature List
