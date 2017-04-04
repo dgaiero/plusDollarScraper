@@ -248,7 +248,7 @@ def main():
     daysLeft = daysUntil(int(END_DATE[0]), int(END_DATE[1]), int(END_DATE[2]))
     amountToday = balance / daysLeft  # Just some simple division
     endDate = "{}/{}/{}".format(END_DATE[2], END_DATE[1], END_DATE[0])
-    message = "Today you have ${} to spend. \n You have ${} left. \n There are {} days left until the end date ({}).".format(
+    message = "Today you have ${:,} to spend. \n You have ${:,} left. \n There are {} days left until the end date ({}).".format(
         round(amountToday, 2), round(balance, 2), daysLeft, endDate)
     if SEND_METHOD == 1:  # 1 = Email
         sendEMail(message)
