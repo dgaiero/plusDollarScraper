@@ -250,7 +250,7 @@ def debug(message):
         return()
     elif DEBUG_ID == 1:
         if message == 1:
-            print("Config Settings")
+            print("\n================\nConfig Settings\n================\n")
             for x in config:
                 print("\n{}\n================".format(x))
                 for y in config[x]:
@@ -279,7 +279,7 @@ def main():
         sendSMS(message)
     elif SEND_METHOD == 3:
         sendIFTTT(message)
-    debug("\n\n##End##")
+    print("\n================\nEND PROGRAM\n================\n")
 
 
 if __name__ == '__main__':
