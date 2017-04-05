@@ -31,13 +31,12 @@ URL = "https://cardcenter.calpoly.edu/student/welcome.php"
 
 
 def configSetup():
-    global USERNAME, PASSWORD, EMAIL_USERNAME, EMAIL_PASSWORD, EMAIL_SERVER
+    global config, USERNAME, PASSWORD, EMAIL_USERNAME, EMAIL_PASSWORD, EMAIL_SERVER
     global EMAIL_PORT, EMAIL_TO, SEND_BY, SEND_METHOD, END_DATE, SMS_ACCOUNT_SID
-    global SMS_AUTH_TOKEN, SMS_SENDING_NUMBER, SMS_RECEIVING_NUMBER, IFTTT_SECRETKEY, IFTTT_EVENTNAME
+    global SMS_AUTH_TOKEN, SMS_SENDING_NUMBER, SMS_RECEIVING_NUMBER, IFTTT_SECRETKEY, IFTTT_EVENTNAME, DEBUG_ID
     # checks if the config file already exists
     fileExists = os.path.isfile("config.ini")
     config = configparser.ConfigParser()  # initalizes config parser
-
     if fileExists:  # If the file exists, then parse the fields and set to global variables
         config.read('config.ini')
         USERNAME = config['CALPOLY_CREDENTIALS']['USERNAME']
@@ -55,6 +54,7 @@ def configSetup():
         SMS_RECEIVING_NUMBER = config['SMS_SETTINGS']['RECEIVING_NUMBER']
         IFTTT_SECRETKEY = config['IFTTT_SETTINGS']['IFTTT_SECRETKEY']
         IFTTT_EVENTNAME = config['IFTTT_SETTINGS']['IFTTT_EVENTNAME']
+        DEBUG_ID = int(config['OPTIONS']['DEBUG'])
         # Makes value case insensitive
         sendBy = config['OPTIONS']['SEND_BY'].upper()
         if sendBy == "EMAIL":  # SEND_METHOD defaults to 1 (Email)
@@ -111,15 +111,16 @@ def configSetup():
         config['CALPOLY_CREDENTIALS'] = {
             'USERNAME': USERNAME, 'PASSWORD': passwordEncode}
         config['EMAIL_SETTINGS'] = {'LOGIN': EMAIL_USERNAME, 'PASSWORD': emailPasswordEncode,
-                                     'SERVER': EMAIL_SERVER, 'PORT': EMAIL_PORT, 'TO': EMAIL_TO}
+                                    'SERVER': EMAIL_SERVER, 'PORT': EMAIL_PORT, 'TO': EMAIL_TO}
         config['SMS_SETTINGS'] = {
             'ACCOUNT_SID': SMS_ACCOUNT_SID, 'AUTH_TOKEN': SMS_AUTH_TOKEN, 'SENDING_NUMBER': SMS_SENDING_NUMBER, 'RECEIVING_NUMBER': SMS_RECEIVING_NUMBER}
         config['IFTTT_SETTINGS'] = {
             'IFTTT_SECRETKEY': IFTTT_SECRETKEY, 'IFTTT_EVENTNAME': IFTTT_EVENTNAME}
-        config['OPTIONS'] = {'SEND_BY': sendBy, 'END': END_DATE}
+        config['OPTIONS'] = {'SEND_BY': sendBy, 'END': END_DATE,'DEBUG':'0'}
 
         with open('config.ini', 'w') as configfile:
             config.write(configfile)
+    debug(1)
 
 # ========================================================
 # Scrapes balance
@@ -209,7 +210,7 @@ def sendSMS(message):
     message = client.messages.create(body=_message,
                                      to=SMS_RECEIVING_NUMBER,
                                      from_=SMS_SENDING_NUMBER)
-
+    debug("\nHeader for Twilio\n================\n{}".format(str(message)))
 # ========================================================
 # Send notificaiotn with IFTTT
 # ========================================================
@@ -221,7 +222,8 @@ def sendIFTTT(message):
     report["value1"] = message
     url = "https://maker.ifttt.com/trigger/{}/with/key/{}".format(
         IFTTT_EVENTNAME, IFTTT_SECRETKEY)
-    requests.post(url, data=report)
+    urlPost = requests.post(url, data=report)
+    debug("\nHeader for IFTTT\n================\n{}".format(urlPost.status_code))
 
 # ========================================================
 # Calcualte days remaining until the end of quarter
@@ -234,7 +236,26 @@ def daysUntil(year, month, day):
     # formatted yyyy,m,d
     future = date(year, month, day)
     diff = future - today
+    debug("\nDate Information\n================\nToday = {}.\nFuture Day = {}\nDifference in days = {}".format(today,future,diff))
     return diff.days
+
+# ========================================================
+# Debugger
+# ========================================================
+
+
+def debug(message):
+    if DEBUG_ID == 0:
+        return()
+    elif DEBUG_ID == 1:
+        if message == 1:
+            print("Config Settings")
+            for x in config:
+                print ("\n{}\n================".format(x))
+                for y in config[x]:
+                    print (y,':',config[x][y])
+        else:
+            print(message)
 
 # ========================================================
 # Main Function
@@ -247,15 +268,17 @@ def main():
     # Everything from config comes as str, must convert to int.
     daysLeft = daysUntil(int(END_DATE[0]), int(END_DATE[1]), int(END_DATE[2]))
     amountToday = balance / daysLeft  # Just some simple division
-    endDate = "{}/{}/{}".format(END_DATE[2], END_DATE[1], END_DATE[0])
-    message = "Today you have ${:,.2f} to spend. \n You have ${:,.2f} left. \n There are {} days left until the end date ({}).".format(
+    endDate = "{}/{}/{}".format(END_DATE[1], END_DATE[2], END_DATE[0])
+    message = "Today you have ${:,.2f} to spend.\nYou have ${:,.2f} left.\nThere are {} days left until the end date ({}).".format(
         round(amountToday, 2), round(balance, 2), daysLeft, endDate)
+    debug("\nExpected Message\n================\n{}".format(message))
     if SEND_METHOD == 1:  # 1 = Email
         sendEMail(message)
     elif SEND_METHOD == 2:  # 2 = SMS
         sendSMS(message)
     elif SEND_METHOD == 3:
         sendIFTTT(message)
+    debug("\n\n##End##")
 
 
 if __name__ == '__main__':
