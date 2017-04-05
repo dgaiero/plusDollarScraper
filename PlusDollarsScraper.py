@@ -116,7 +116,7 @@ def configSetup():
             'ACCOUNT_SID': SMS_ACCOUNT_SID, 'AUTH_TOKEN': SMS_AUTH_TOKEN, 'SENDING_NUMBER': SMS_SENDING_NUMBER, 'RECEIVING_NUMBER': SMS_RECEIVING_NUMBER}
         config['IFTTT_SETTINGS'] = {
             'IFTTT_SECRETKEY': IFTTT_SECRETKEY, 'IFTTT_EVENTNAME': IFTTT_EVENTNAME}
-        config['OPTIONS'] = {'SEND_BY': sendBy, 'END': END_DATE,'DEBUG':'0'}
+        config['OPTIONS'] = {'SEND_BY': sendBy, 'END': END_DATE, 'DEBUG': '0'}
 
         with open('config.ini', 'w') as configfile:
             config.write(configfile)
@@ -236,7 +236,8 @@ def daysUntil(year, month, day):
     # formatted yyyy,m,d
     future = date(year, month, day)
     diff = future - today
-    debug("\nDate Information\n================\nToday = {}.\nFuture Day = {}\nDifference in days = {}".format(today,future,diff))
+    debug("\nDate Information\n================\nToday = {}.\nFuture Day = {}\nDifference in days = {}".format(
+        today, future, diff))
     return diff.days
 
 # ========================================================
@@ -251,9 +252,9 @@ def debug(message):
         if message == 1:
             print("Config Settings")
             for x in config:
-                print ("\n{}\n================".format(x))
+                print("\n{}\n================".format(x))
                 for y in config[x]:
-                    print (y,':',config[x][y])
+                    print(y, ':', config[x][y])
         else:
             print(message)
 
