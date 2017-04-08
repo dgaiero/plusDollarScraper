@@ -4,18 +4,19 @@
 # ========================================================
 # Import libraries
 # ========================================================
+import os
+from datetime import *
+
+import base64
+import configparser
 import lxml.html
 import requests
-from bs4 import BeautifulSoup
 import re
-import os
 import smtplib
+from bs4 import BeautifulSoup
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from datetime import *
-import configparser
 from twilio.rest import TwilioRestClient
-import base64
 
 
 # ========================================================
@@ -26,7 +27,7 @@ LOGIN_URL = "https://my.calpoly.edu/cas/login"
 URL = "https://cardcenter.calpoly.edu/student/welcome.php"
 
 # ========================================================
-# Setup session variables
+# Run config file and setup global variables
 # ========================================================
 
 
@@ -34,10 +35,9 @@ def configSetup():
     global config, USERNAME, PASSWORD, EMAIL_USERNAME, EMAIL_PASSWORD, EMAIL_SERVER
     global EMAIL_PORT, EMAIL_TO, SEND_BY, SEND_METHOD, END_DATE, SMS_ACCOUNT_SID
     global SMS_AUTH_TOKEN, SMS_SENDING_NUMBER, SMS_RECEIVING_NUMBER, IFTTT_SECRETKEY, IFTTT_EVENTNAME, DEBUG_ID
-    # checks if the config file already exists
     fileExists = os.path.isfile("config.ini")
-    config = configparser.ConfigParser()  # initalizes config parser
-    if fileExists:  # If the file exists, then parse the fields and set to global variables
+    config = configparser.ConfigParser()
+    if fileExists:
         config.read('config.ini')
         USERNAME = config['CALPOLY_CREDENTIALS']['USERNAME']
         PASSWORD = base64.b64decode(
@@ -55,9 +55,9 @@ def configSetup():
         IFTTT_SECRETKEY = config['IFTTT_SETTINGS']['IFTTT_SECRETKEY']
         IFTTT_EVENTNAME = config['IFTTT_SETTINGS']['IFTTT_EVENTNAME']
         DEBUG_ID = int(config['OPTIONS']['DEBUG'])
-        # Makes value case insensitive
         sendBy = config['OPTIONS']['SEND_BY'].upper()
-        if sendBy == "EMAIL":  # SEND_METHOD defaults to 1 (Email)
+        # SEND_METHOD defaults to 1 (Email)
+        if sendBy == "EMAIL":
             SEND_METHOD = 1
         elif sendBy == "SMS":
             SEND_METHOD = 2
@@ -66,8 +66,8 @@ def configSetup():
         else:
             SEND_METHOD = 1
         END_DATE = config['OPTIONS']['END'].split(
-            ",")  # Split end date into yyyy,m,d
-    else:  # If the config file does not exist, this writes config.ini
+            ",")
+    else:
         print("The following prompots will setup the config.ini file.\nThis will only run once.\n\n")
         USERNAME = input('Enter your cal poly username (with @calpoly.edu): ')
         PASSWORD = input('Enter your cal poly password: ')
@@ -98,7 +98,8 @@ def configSetup():
             "How do you want to recieve notifications? 'EMAIL' 'SMS' or 'IFTTT': ").upper() or "EMAIL"
         END_DATE = input(
             "What is the end date? (yyyy,m,d). No leading zeros: ") or "2017,6,16"
-        if sendBy == "EMAIL":  # SEND_METHOD defaults to 1 (Email)
+        # SEND_METHOD defaults to 1 (Email)
+        if sendBy == "EMAIL":
             SEND_METHOD = 1
         elif sendBy == "SMS":
             SEND_METHOD = 2
@@ -106,7 +107,6 @@ def configSetup():
             SEND_METHOD = 3
         else:
             SEND_METHOD = 1
-        # Dictionary for config file
 
         config['CALPOLY_CREDENTIALS'] = {
             'USERNAME': USERNAME, 'PASSWORD': passwordEncode}
@@ -264,11 +264,12 @@ def debug(message):
 
 
 def main():
-    configSetup()  # Run configsetup to return global variables
+    # The config file returns everything as str, and must be converted to int,
+    # etc.
+    configSetup()
     balance = returnBalance()
-    # Everything from config comes as str, must convert to int.
     daysLeft = daysUntil(int(END_DATE[0]), int(END_DATE[1]), int(END_DATE[2]))
-    amountToday = balance / daysLeft  # Just some simple division
+    amountToday = balance / daysLeft
     endDate = "{}/{}/{}".format(END_DATE[1], END_DATE[2], END_DATE[0])
     message = "Today you have ${:,.2f} to spend.\nYou have ${:,.2f} left.\nThere are {} days left until the end date ({}).".format(
         round(amountToday, 2), round(balance, 2), daysLeft, endDate)
@@ -277,7 +278,7 @@ def main():
         sendEMail(message)
     elif SEND_METHOD == 2:  # 2 = SMS
         sendSMS(message)
-    elif SEND_METHOD == 3:
+    elif SEND_METHOD == 3:  # 3 = Twilio
         sendIFTTT(message)
     print("\n================\nEND PROGRAM\n================\n")
 
