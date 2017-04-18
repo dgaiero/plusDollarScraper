@@ -1,13 +1,17 @@
-# Plus Dollar Scraper to email/SMS
+# CPSLO Plus Dollar Scraper to various web services
 # Dominic Gaiero, Josiah Pang
 # Based on "Logging in with Requests" article by Stephen Brennan
+
 # ========================================================
 # Import libraries
 # ========================================================
+
+
 import os
 from datetime import *
-
+import urllib.request
 import base64
+
 import configparser
 import lxml.html
 import requests
@@ -17,14 +21,16 @@ from bs4 import BeautifulSoup
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from twilio.rest import TwilioRestClient
-
+from pushbullet import Pushbullet
 
 # ========================================================
 # Variables
 # ========================================================
 
+
 LOGIN_URL = "https://my.calpoly.edu/cas/login"
 URL = "https://cardcenter.calpoly.edu/student/welcome.php"
+ON_TARGET = "https://www.calpolydining.com/diningprograms/freshman/plusdollars/"
 
 # ========================================================
 # Run config file and setup global variables
@@ -33,7 +39,7 @@ URL = "https://cardcenter.calpoly.edu/student/welcome.php"
 
 def configSetup():
     global config, USERNAME, PASSWORD, EMAIL_USERNAME, EMAIL_PASSWORD, EMAIL_SERVER
-    global EMAIL_PORT, EMAIL_TO, SEND_BY, SEND_METHOD, END_DATE, SMS_ACCOUNT_SID
+    global EMAIL_PORT, EMAIL_TO, SEND_BY, SEND_METHOD, END_DATE, SMS_ACCOUNT_SID, PB_API
     global SMS_AUTH_TOKEN, SMS_SENDING_NUMBER, SMS_RECEIVING_NUMBER, IFTTT_SECRETKEY, IFTTT_EVENTNAME, DEBUG_ID
     fileExists = os.path.isfile("config.ini")
     config = configparser.ConfigParser()
@@ -56,15 +62,8 @@ def configSetup():
         IFTTT_EVENTNAME = config['IFTTT_SETTINGS']['IFTTT_EVENTNAME']
         DEBUG_ID = int(config['OPTIONS']['DEBUG'])
         sendBy = config['OPTIONS']['SEND_BY'].upper()
-        # SEND_METHOD defaults to 1 (Email)
-        if sendBy == "EMAIL":
-            SEND_METHOD = 1
-        elif sendBy == "SMS":
-            SEND_METHOD = 2
-        elif sendBy == "IFTTT":
-            SEND_METHOD = 3
-        else:
-            SEND_METHOD = 1
+        PB_API = config['PUSHBULLET']['API']
+        SEND_METHOD = sendMethod(sendBy)
         END_DATE = config['OPTIONS']['END'].split(
             ",")
     else:
@@ -94,19 +93,13 @@ def configSetup():
         print("If you do not want to use IFTTT, then leave the following sections blank.\n")
         IFTTT_SECRETKEY = input("Enter your IFTTT Secret Key: ")
         IFTTT_EVENTNAME = input("Enter your IFTTT Event Name: ")
+        print("If you do not want to use Push Bullet, then leave the following sections blank.\n")
+        PB_API = input("Enter your PushBullet API Key: ")
         sendBy = input(
-            "How do you want to recieve notifications? 'EMAIL' 'SMS' or 'IFTTT': ").upper() or "EMAIL"
+            "How do you want to recieve notifications? 'EMAIL' 'SMS' 'IFTTT' or 'PB': ").upper() or "EMAIL"
         END_DATE = input(
             "What is the end date? (yyyy,m,d). No leading zeros: ") or "2017,6,16"
-        # SEND_METHOD defaults to 1 (Email)
-        if sendBy == "EMAIL":
-            SEND_METHOD = 1
-        elif sendBy == "SMS":
-            SEND_METHOD = 2
-        elif sendBy == "IFTTT":
-            SEND_METHOD = 3
-        else:
-            SEND_METHOD = 1
+        SEND_METHOD = sendMethod(sendBy)
 
         config['CALPOLY_CREDENTIALS'] = {
             'USERNAME': USERNAME, 'PASSWORD': passwordEncode}
@@ -116,12 +109,30 @@ def configSetup():
             'ACCOUNT_SID': SMS_ACCOUNT_SID, 'AUTH_TOKEN': SMS_AUTH_TOKEN, 'SENDING_NUMBER': SMS_SENDING_NUMBER, 'RECEIVING_NUMBER': SMS_RECEIVING_NUMBER}
         config['IFTTT_SETTINGS'] = {
             'IFTTT_SECRETKEY': IFTTT_SECRETKEY, 'IFTTT_EVENTNAME': IFTTT_EVENTNAME}
+        config['PUSHBULLET'] = {'API':''}
         config['OPTIONS'] = {'SEND_BY': sendBy, 'END': END_DATE, 'DEBUG': '0'}
 
         with open('config.ini', 'w') as configfile:
             config.write(configfile)
     debug(1)
 
+# ========================================================
+# Send By
+# ========================================================
+
+def sendMethod(sendBy):
+    # SEND_METHOD defaults to 1 (Email)
+    if sendBy == "EMAIL":
+        SEND_METHOD = 1
+    elif sendBy == "SMS":
+        SEND_METHOD = 2
+    elif sendBy == "IFTTT":
+        SEND_METHOD = 3
+    elif sendBy == "PB":
+        SEND_METHOD = 4
+    else:
+        SEND_METHOD = 1
+    return SEND_METHOD
 # ========================================================
 # Scrapes balance
 # ========================================================
@@ -152,46 +163,62 @@ def returnBalance():
 # Scrape url
 # =========================================================
 
-    # Read data from CSGOLD page (using session)
     result = session_requests.get(URL)
 
-    # This part should be unnecessary, but I can't seem to figure out
-    # how to do it another way
+    '''
+    This part should be unnecessary, but I can't seem to figure out
+    how to do it another way
+    '''
 
-    soup = BeautifulSoup(result.text, "lxml")  # Convert to regular text
-    fileName = "temp.webScrape"  # Create a temp file
-    f = open(fileName, "w+")  # open and fill temp file with the webbpage
-    f.write(str(soup))
-    f.close()
-    fh = open(fileName)  # Opens file again, with different rights (r != w)
+    soup = BeautifulSoup(result.text, "lxml")
+    fileName = "temp.webScrape"
+    fh = open(fileName, "w+")
+    fh.write(str(soup))
+    fh.close()
+    fh = open(fileName)
     balances = []
     for line in fh:  # Reads the webpage and looks for $xxxxxx</td>
         if re.search(r"\$.*</td>", line):
             inputData = line.rstrip().split("<")
             inputData = inputData[1].split("$")
-            processedData = inputData  # Splits the data so it returns just a number
-            # Adds the number to end of balances
+            processedData = inputData
             balances.extend(processedData)
     balance = balances[1]
     fh.close()
-    try:  # Removes the temp file
+    try:
         os.remove(fileName)
     except OSError:
         pass
-    balance = float(balance)  # Converts str to float
+    balance = float(balance)
     return balance
+
+# ========================================================
+# Return on target per day budget - In the works
+# ========================================================
+
+
+def onTarget():
+    page = urllib.request.urlopen(ON_TARGET)
+    page = requests.get(ON_TARGET)
+    soup = BeautifulSoup(page, 'html.parser')
+    # Add plusdollars-apartment to config to change between apartment and non
+    # apartment
+    targetBalance_box = soup.find(
+        'span', attrs={'class': 'plusdollars-apartment'})
+    targetBalance = targetBalance_box.text.strip()
+    print(targetBalance)
 
 # ========================================================
 # Send EMail
 # ========================================================
 
 
-def sendEMail(message):
+def sendEMail(title,message):
     msg = MIMEMultipart()
     msg['From'] = EMAIL_USERNAME  # Adds the pertinant values to msg dictionary
     msg['To'] = EMAIL_TO
-    msg['Subject'] = "Your Daily Balance"
-    msg.attach(MIMEText(_message, 'plain'))
+    msg['Subject'] = title
+    msg.attach(MIMEText(message, 'plain'))
     server = smtplib.SMTP(EMAIL_SERVER, EMAIL_PORT)
     server.starttls()  # change this depending on the server requirements.
     server.login(EMAIL_USERNAME, EMAIL_PASSWORD)
@@ -207,10 +234,22 @@ def sendEMail(message):
 def sendSMS(message):
 
     client = TwilioRestClient(SMS_ACCOUNT_SID, SMS_AUTH_TOKEN)
-    message = client.messages.create(body=_message,
+    message = client.messages.create(body=message,
                                      to=SMS_RECEIVING_NUMBER,
                                      from_=SMS_SENDING_NUMBER)
     debug("\nHeader for Twilio\n================\n{}".format(str(message)))
+
+
+# ========================================================
+# Send PushBullet
+# ========================================================
+def sendPushBullet(title,message):
+
+    pb = Pushbullet(PB_API)
+    push = pb.push_note(title, message)
+    debug("\nStatus for Push Bullet\n================\n")
+    debug(push)
+
 # ========================================================
 # Send notificaiotn with IFTTT
 # ========================================================
@@ -238,7 +277,7 @@ def daysUntil(year, month, day):
     diff = future - today
     debug("\nDate Information\n================\nToday = {}.\nFuture Day = {}\nDifference in days = {}".format(
         today, future, diff))
-    return diff.days
+    return (diff.days + 1)
 
 # ========================================================
 # Debugger
@@ -264,23 +303,28 @@ def debug(message):
 
 
 def main():
-    # The config file returns everything as str, and must be converted to int,
-    # etc.
     configSetup()
     balance = returnBalance()
-    daysLeft = daysUntil(int(END_DATE[0]), int(END_DATE[1]), int(END_DATE[2]))
+    #onTargetBalance = onTarget()
+    date_month = int(END_DATE[1])
+    date_day = int(END_DATE[2])
+    date_year = int(END_DATE[0])
+    daysLeft = daysUntil(date_year, date_month, date_day)
     amountToday = balance / daysLeft
-    endDate = "{}/{}/{}".format(END_DATE[1], END_DATE[2], END_DATE[0])
+    endDate = "{}/{}/{}".format(date_month, date_day, date_year)
+    title = "${:,.2f} to spend today.".format(amountToday)
     message = "Today you have ${:,.2f} to spend.\nYou have ${:,.2f} left.\nThere are {} days left until the end date ({}).".format(
-        round(amountToday, 2), round(balance, 2), daysLeft, endDate)
+        amountToday, balance, daysLeft, endDate)
     debug("\nExpected Message\n================\n{}".format(message))
     if SEND_METHOD == 1:  # 1 = Email
-        sendEMail(message)
+        sendEMail(title,message)
     elif SEND_METHOD == 2:  # 2 = SMS
         sendSMS(message)
     elif SEND_METHOD == 3:  # 3 = Twilio
         sendIFTTT(message)
-    print("\n================\nEND PROGRAM\n================\n")
+    elif SEND_METHOD == 4:
+        sendPushBullet(title,message)
+    debug("\n================\nEND PROGRAM\n================\n")
 
 
 if __name__ == '__main__':
