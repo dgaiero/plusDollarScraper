@@ -100,6 +100,7 @@ def configSetup():
         END_DATE = input(
             "What is the end date? (yyyy,m,d). No leading zeros: ") or "2017,6,16"
         SEND_METHOD = sendMethod(sendBy)
+        DEBUG_ID = 0
 
         config['CALPOLY_CREDENTIALS'] = {
             'USERNAME': USERNAME, 'PASSWORD': passwordEncode}
@@ -109,7 +110,7 @@ def configSetup():
             'ACCOUNT_SID': SMS_ACCOUNT_SID, 'AUTH_TOKEN': SMS_AUTH_TOKEN, 'SENDING_NUMBER': SMS_SENDING_NUMBER, 'RECEIVING_NUMBER': SMS_RECEIVING_NUMBER}
         config['IFTTT_SETTINGS'] = {
             'IFTTT_SECRETKEY': IFTTT_SECRETKEY, 'IFTTT_EVENTNAME': IFTTT_EVENTNAME}
-        config['PUSHBULLET'] = {'API':''}
+        config['PUSHBULLET'] = {'API': ''}
         config['OPTIONS'] = {'SEND_BY': sendBy, 'END': END_DATE, 'DEBUG': '0'}
 
         with open('config.ini', 'w') as configfile:
@@ -119,6 +120,7 @@ def configSetup():
 # ========================================================
 # Send By
 # ========================================================
+
 
 def sendMethod(sendBy):
     # SEND_METHOD defaults to 1 (Email)
@@ -213,7 +215,7 @@ def onTarget():
 # ========================================================
 
 
-def sendEMail(title,message):
+def sendEMail(title, message):
     msg = MIMEMultipart()
     msg['From'] = EMAIL_USERNAME  # Adds the pertinant values to msg dictionary
     msg['To'] = EMAIL_TO
@@ -243,7 +245,7 @@ def sendSMS(message):
 # ========================================================
 # Send PushBullet
 # ========================================================
-def sendPushBullet(title,message):
+def sendPushBullet(title, message):
 
     pb = Pushbullet(PB_API)
     push = pb.push_note(title, message)
@@ -317,13 +319,13 @@ def main():
         amountToday, balance, daysLeft, endDate)
     debug("\nExpected Message\n================\n{}".format(message))
     if SEND_METHOD == 1:  # 1 = Email
-        sendEMail(title,message)
+        sendEMail(title, message)
     elif SEND_METHOD == 2:  # 2 = SMS
         sendSMS(message)
     elif SEND_METHOD == 3:  # 3 = Twilio
         sendIFTTT(message)
     elif SEND_METHOD == 4:
-        sendPushBullet(title,message)
+        sendPushBullet(title, message)
     debug("\n================\nEND PROGRAM\n================\n")
 
 
