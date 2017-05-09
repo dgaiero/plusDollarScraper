@@ -8,9 +8,11 @@
 
 
 import os
+import sys
 from datetime import *
 import urllib.request
 import base64
+from getpass import getpass
 
 import configparser
 import lxml.html
@@ -69,37 +71,59 @@ def configSetup():
     else:
         print("The following prompots will setup the config.ini file.\nThis will only run once.\n\n")
         USERNAME = input('Enter your cal poly username (with @calpoly.edu): ')
-        PASSWORD = input('Enter your cal poly password: ')
+        PASSWORD = getpass('Enter your cal poly password (The password will be invisible): ')
         passwordEncode = base64.b64encode(
             bytes(PASSWORD, "utf-8")).decode("utf-8")
-        print("If you do not want to use a third party email service, then leave the following sections blank\n")
-        EMAIL_USERNAME = input(
-            "Enter your email address (or leave blank for CALPOLY email) : ") or USERNAME
-        EMAIL_PASSWORD = input(
-            "Enter your password (or leave blank for CALPOLY password) : ") or PASSWORD
-        emailPasswordEncode = base64.b64encode(
-            bytes(EMAIL_PASSWORD, "utf-8")).decode("utf-8")
-        EMAIL_SERVER = input(
-            "Enter the email server (or leave blank for smtp.office365.com) : ") or "smtp.office365.com"
-        EMAIL_PORT = input(
-            "Enter the email server port (or leave blank for CALPOLY port 587) : ") or "587"
-        EMAIL_TO = input(
-            "Enter the receiving email address (or leave blank for CALPOLY email) : ") or USERNAME
-        print("If you do not want to use Twilio SMS, then leave the following sections blank\n")
-        SMS_ACCOUNT_SID = input("Enter your Twilio account SID: ")
-        SMS_AUTH_TOKEN = input("Enter your Twilio auth token: ")
-        SMS_SENDING_NUMBER = input("Enter your phone number (with +1): ")
-        SMS_RECEIVING_NUMBER = input("Enter your Twilio number (with +1): ")
-        print("If you do not want to use IFTTT, then leave the following sections blank.\n")
-        IFTTT_SECRETKEY = input("Enter your IFTTT Secret Key: ")
-        IFTTT_EVENTNAME = input("Enter your IFTTT Event Name: ")
-        print("If you do not want to use Push Bullet, then leave the following sections blank.\n")
-        PB_API = input("Enter your PushBullet API Key: ")
         sendBy = input(
             "How do you want to recieve notifications? 'EMAIL' 'SMS' 'IFTTT' or 'PB': ").upper() or "EMAIL"
+        SEND_METHOD = sendMethod(sendBy)
+
+
+        EMAIL_USERNAME = USERNAME
+        EMAIL_PASSWORD = PASSWORD
+        emailPasswordEncode = base64.b64encode(
+            bytes(EMAIL_PASSWORD, "utf-8")).decode("utf-8")
+        EMAIL_SERVER = "smtp.office365.com"
+        EMAIL_PORT = "587"
+        EMAIL_TO = USERNAME
+        SMS_ACCOUNT_SID = ""
+        SMS_AUTH_TOKEN = ""
+        SMS_SENDING_NUMBER = ""
+        SMS_RECEIVING_NUMBER = ""
+        IFTTT_SECRETKEY = ""
+        IFTTT_EVENTNAME = ""
+        PB_API = ""
+
+        if SEND_METHOD == 1:
+            EMAIL_USERNAME = input(
+                "Enter your email address (or leave blank for CALPOLY email) : ") or USERNAME
+            EMAIL_PASSWORD = getpass(
+                "Enter your password (or leave blank for CALPOLY password) (The password will be invisible): ") or PASSWORD
+            emailPasswordEncode = base64.b64encode(
+                bytes(EMAIL_PASSWORD, "utf-8")).decode("utf-8")
+            EMAIL_SERVER = input(
+                "Enter the email server (or leave blank for smtp.office365.com) : ") or "smtp.office365.com"
+            EMAIL_PORT = input(
+                "Enter the email server port (or leave blank for CALPOLY port 587) : ") or "587"
+            EMAIL_TO = input(
+                "Enter the receiving email address (or leave blank for CALPOLY email) : ") or USERNAME
+        elif SEND_METHOD == 2:
+            SMS_ACCOUNT_SID = input("Enter your Twilio account SID: ")
+            SMS_AUTH_TOKEN = input("Enter your Twilio auth token: ")
+            SMS_SENDING_NUMBER = input("Enter your phone number (with +1): ")
+            SMS_RECEIVING_NUMBER = input("Enter your Twilio number (with +1): ")
+        elif SEND_METHOD ==3:
+            IFTTT_SECRETKEY = input("Enter your IFTTT Secret Key: ")
+            IFTTT_EVENTNAME = input("Enter your IFTTT Event Name: ")
+            print("If you do not want to use Push Bullet, then leave the following sections blank.\n")
+        elif SEND_METHOD ==4:
+            PB_API = input("Enter your PushBullet API Key: ")
+        else:
+            pass
         END_DATE = input(
             "What is the end date? (yyyy,m,d). No leading zeros: ") or "2017,6,16"
-        SEND_METHOD = sendMethod(sendBy)
+        DEBUG_ID = input("Do you want to turn on DEBUG MODE? Enter 1 if yes: ") or 0
+
         DEBUG_ID = 0
 
         config['CALPOLY_CREDENTIALS'] = {
@@ -111,7 +135,7 @@ def configSetup():
         config['IFTTT_SETTINGS'] = {
             'IFTTT_SECRETKEY': IFTTT_SECRETKEY, 'IFTTT_EVENTNAME': IFTTT_EVENTNAME}
         config['PUSHBULLET'] = {'API': ''}
-        config['OPTIONS'] = {'SEND_BY': sendBy, 'END': END_DATE, 'DEBUG': '0'}
+        config['OPTIONS'] = {'SEND_BY': sendBy, 'END': END_DATE, 'DEBUG': DEBUG_ID}
 
         with open('config.ini', 'w') as configfile:
             config.write(configfile)
@@ -185,13 +209,16 @@ def returnBalance():
             inputData = inputData[1].split("$")
             processedData = inputData
             balances.extend(processedData)
-    balance = balances[1]
+    try:
+        balance = balances[1]
+        balance = float(balance)
+    except IndexError:
+        balance = "ERR"
     fh.close()
     try:
         os.remove(fileName)
     except OSError:
         pass
-    balance = float(balance)
     return balance
 
 # ========================================================
@@ -202,6 +229,7 @@ def returnBalance():
 def onTarget():
     page = urllib.request.urlopen(ON_TARGET)
     page = requests.get(ON_TARGET)
+    time.sleep(10)
     soup = BeautifulSoup(page, 'html.parser')
     # Add plusdollars-apartment to config to change between apartment and non
     # apartment
@@ -308,15 +336,19 @@ def main():
     configSetup()
     balance = returnBalance()
     #onTargetBalance = onTarget()
-    date_month = int(END_DATE[1])
-    date_day = int(END_DATE[2])
-    date_year = int(END_DATE[0])
-    daysLeft = daysUntil(date_year, date_month, date_day)
-    amountToday = balance / daysLeft
-    endDate = "{}/{}/{}".format(date_month, date_day, date_year)
-    title = "${:,.2f} to spend today.".format(amountToday)
-    message = "Today you have ${:,.2f} to spend.\nYou have ${:,.2f} left.\nThere are {} days left until the end date ({}).".format(
-        amountToday, balance, daysLeft, endDate)
+    if balance == "ERR":
+        title = "Error Retrieving Data"
+        message = "There was an error retrieving the data.\nAn exception was raised."
+    else:
+        date_month = int(END_DATE[1])
+        date_day = int(END_DATE[2])
+        date_year = int(END_DATE[0])
+        daysLeft = daysUntil(date_year, date_month, date_day)
+        amountToday = balance / daysLeft
+        endDate = "{}/{}/{}".format(date_month, date_day, date_year)
+        title = "${:,.2f} to spend today.".format(amountToday)
+        message = "Today you have ${:,.2f} to spend.\nYou have ${:,.2f} left.\nThere are {} days left until the end date ({}).".format(
+            amountToday, balance, daysLeft, endDate)
     debug("\nExpected Message\n================\n{}".format(message))
     if SEND_METHOD == 1:  # 1 = Email
         sendEMail(title, message)
@@ -330,4 +362,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print ("\n================\nEND PROGRAM - KEYBOARD\n================\n")
+        sys.exit()
