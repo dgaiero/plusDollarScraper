@@ -277,8 +277,9 @@ def sendPushBullet(title, message):
 
     pb = Pushbullet(PB_API)
     push = pb.push_note(title, message)
-    debug("\nStatus for Push Bullet\n================\n")
-    debug(push)
+    debug("\nStatus for Push Bullet\n================")
+    for key, value in push.items():
+        debug("{} : {}".format(key,push[key]))
 
 # ========================================================
 # Send notificaiotn with IFTTT
