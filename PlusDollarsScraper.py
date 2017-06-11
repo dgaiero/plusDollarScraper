@@ -71,13 +71,13 @@ def configSetup():
     else:
         print("The following prompots will setup the config.ini file.\nThis will only run once.\n\n")
         USERNAME = input('Enter your cal poly username (with @calpoly.edu): ')
-        PASSWORD = getpass('Enter your cal poly password (The password will be invisible): ')
+        PASSWORD = getpass(
+            'Enter your cal poly password (The password will be invisible): ')
         passwordEncode = base64.b64encode(
             bytes(PASSWORD, "utf-8")).decode("utf-8")
         sendBy = input(
             "How do you want to recieve notifications? 'EMAIL' 'SMS' 'IFTTT' or 'PB': ").upper() or "EMAIL"
         SEND_METHOD = sendMethod(sendBy)
-
 
         EMAIL_USERNAME = USERNAME
         EMAIL_PASSWORD = PASSWORD
@@ -111,18 +111,21 @@ def configSetup():
             SMS_ACCOUNT_SID = input("Enter your Twilio account SID: ")
             SMS_AUTH_TOKEN = input("Enter your Twilio auth token: ")
             SMS_SENDING_NUMBER = input("Enter your phone number (with +1): ")
-            SMS_RECEIVING_NUMBER = input("Enter your Twilio number (with +1): ")
-        elif SEND_METHOD ==3:
+            SMS_RECEIVING_NUMBER = input(
+                "Enter your Twilio number (with +1): ")
+        elif SEND_METHOD == 3:
             IFTTT_SECRETKEY = input("Enter your IFTTT Secret Key: ")
             IFTTT_EVENTNAME = input("Enter your IFTTT Event Name: ")
-            print("If you do not want to use Push Bullet, then leave the following sections blank.\n")
-        elif SEND_METHOD ==4:
+            print(
+                "If you do not want to use Push Bullet, then leave the following sections blank.\n")
+        elif SEND_METHOD == 4:
             PB_API = input("Enter your PushBullet API Key: ")
         else:
             pass
         END_DATE = input(
             "What is the end date? (yyyy,m,d). No leading zeros: ") or "2017,6,16"
-        DEBUG_ID = input("Do you want to turn on DEBUG MODE? Enter 1 if yes: ") or 0
+        DEBUG_ID = input(
+            "Do you want to turn on DEBUG MODE? Enter 1 if yes: ") or 0
 
         DEBUG_ID = 0
 
@@ -135,11 +138,16 @@ def configSetup():
         config['IFTTT_SETTINGS'] = {
             'IFTTT_SECRETKEY': IFTTT_SECRETKEY, 'IFTTT_EVENTNAME': IFTTT_EVENTNAME}
         config['PUSHBULLET'] = {'API': ''}
-        config['OPTIONS'] = {'SEND_BY': sendBy, 'END': END_DATE, 'DEBUG': DEBUG_ID}
+        config['OPTIONS'] = {'SEND_BY': sendBy,
+                             'END': END_DATE, 'DEBUG': DEBUG_ID}
 
         with open('config.ini', 'w') as configfile:
             config.write(configfile)
-    debug(1)
+    debug("\n================\nConfig Settings\n================\n")
+    for x in config:
+        debug("\n{}\n================".format(x))
+        for y in config[x]:
+            debug("{} : {}".format(y,config[x][y]))
 
 # ========================================================
 # Send By
@@ -279,7 +287,7 @@ def sendPushBullet(title, message):
     push = pb.push_note(title, message)
     debug("\nStatus for Push Bullet\n================")
     for key, value in push.items():
-        debug("{} : {}".format(key,push[key]))
+        debug("{} : {}".format(key, push[key]))
 
 # ========================================================
 # Send notificaiotn with IFTTT
@@ -306,7 +314,7 @@ def daysUntil(year, month, day):
     # formatted yyyy,m,d
     future = date(year, month, day)
     diff = future - today
-    debug("\nDate Information\n================\nToday = {}.\nFuture Day = {}\nDifference in days = {}".format(
+    debug("\nDate Information\n================\nToday : {}.\nFuture Day : {}\nDifference in days : {}".format(
         today, future, diff))
     return (diff.days + 1)
 
@@ -319,14 +327,7 @@ def debug(message):
     if DEBUG_ID == 0:
         return()
     elif DEBUG_ID == 1:
-        if message == 1:
-            print("\n================\nConfig Settings\n================\n")
-            for x in config:
-                print("\n{}\n================".format(x))
-                for y in config[x]:
-                    print(y, ':', config[x][y])
-        else:
-            print(message)
+        print(message)
 
 # ========================================================
 # Main Function
@@ -366,5 +367,5 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        print ("\n================\nEND PROGRAM - KEYBOARD\n================\n")
+        debug("\n================\nEND PROGRAM - KEYBOARD\n================\n")
         sys.exit()
