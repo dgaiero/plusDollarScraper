@@ -43,6 +43,7 @@ def configSetup():
     global config, USERNAME, PASSWORD, EMAIL_USERNAME, EMAIL_PASSWORD, EMAIL_SERVER
     global EMAIL_PORT, EMAIL_TO, SEND_BY, SEND_METHOD, END_DATE, SMS_ACCOUNT_SID, PB_API
     global SMS_AUTH_TOKEN, SMS_SENDING_NUMBER, SMS_RECEIVING_NUMBER, IFTTT_SECRETKEY, IFTTT_EVENTNAME, DEBUG_ID
+
     fileExists = os.path.isfile("config.ini")
     config = configparser.ConfigParser()
     if fileExists:
@@ -143,6 +144,47 @@ def configSetup():
 
         with open('config.ini', 'w') as configfile:
             config.write(configfile)
+
+    loginDetails = {
+    'cpUserName' : USERNAME,
+    'cpPassword' : PASSWORD,
+    'sendMethod' : sendBy ,
+    'endDate' : END_DATE
+    }
+
+    emailSettings = {
+    'emailUsername' : EMAIL_USERNAME,
+    'emailPassword' : EMAIL_PASSWORD,
+    'emailServer' : EMAIL_SERVER,
+    'emailSendTo' : EMAIL_TO
+    }
+
+    smsSettings = {
+    'smsAccountSID' : SMS_ACCOUNT_SID,
+    'smsAuthToken' : SMS_AUTH_TOKEN,
+    'smsSendNum' : SMS_SENDING_NUMBER,
+    'smsRecieveNum' : SMS_RECEIVING_NUMBER
+    }
+
+    iftttSettings = {
+    'iftttSecretKey' : IFTTT_SECRETKEY,
+    'iftttEventName' : IFTTT_EVENTNAME
+    }
+
+    pushBulletSettings = {
+    'pushbulletAPI' : PB_API
+    }
+
+    configSettings = {
+    'loginDetails' : loginDetails,
+    'emailSettings' : emailSettings,
+    'smsSettings' : smsSettings,
+    'iftttSettings' : iftttSettings,
+    'pushBulletSettings' : pushBulletSettings
+    }
+
+    # print(configSettings)
+
     debug("\n================\nConfig Settings\n================\n")
     for x in config:
         debug("\n{}\n================".format(x))
@@ -167,12 +209,13 @@ def sendMethod(sendBy):
     else:
         SEND_METHOD = 1
     return SEND_METHOD
+
 # ========================================================
-# Scrapes balance
+# Login
 # ========================================================
 
+def loginUser():
 
-def returnBalance():
     session_requests = requests.session()  # Initalize web session
     result = session_requests.get(LOGIN_URL)  # Get page data for login
     login_html = lxml.html.fromstring(result.text)
@@ -192,10 +235,19 @@ def returnBalance():
         LOGIN_URL,
         data=form,
     )
+    return session_requests
 
-# =========================================================
-# Scrape url
-# =========================================================
+def loginTest(session_requests):
+    cookie = str(session_requests.cookies)
+    if "my.calpoly.edu/cas" in cookie:
+        return True
+
+# ========================================================
+# Scrapes balance
+# ========================================================
+
+
+def returnBalance(session_requests):
 
     result = session_requests.get(URL)
 
@@ -312,6 +364,7 @@ def daysUntil(year, month, day):
     today = date.today()
     # The date format has to have (a) no leading zeros and (b) must be
     # formatted yyyy,m,d
+    print(year,month,date)
     future = date(year, month, day)
     diff = future - today
     debug("\nDate Information\n================\nToday : {}.\nFuture Day : {}\nDifference in days : {}".format(
@@ -336,7 +389,9 @@ def debug(message):
 
 def main():
     configSetup()
-    balance = returnBalance()
+    result = loginUser()
+    loginTest(result)
+    balance = returnBalance(result)
     #onTargetBalance = onTarget()
     if balance == "ERR":
         title = "Error Retrieving Data"
