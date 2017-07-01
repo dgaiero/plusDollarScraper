@@ -7,6 +7,10 @@ import tkSimpleDialog
 from configparser import *
 from base64 import *
 
+
+import requests
+import lxml.html
+
 class CalendarDialog(tkSimpleDialog.Dialog):
     """Dialog box that displays a calendar and returns the selected date"""
 
@@ -30,7 +34,6 @@ class CalendarFrame(tkinter.LabelFrame):
             global getDate
             getDate = self.selected_date.get()
             # return self.selected_date
-
         self.selected_date = tkinter.StringVar()
         dateTextField = tkinter.Entry(master, textvariable=self.selected_date)
         dateTextField.grid(row=3, column=1, pady=2)
@@ -39,55 +42,8 @@ class CalendarFrame(tkinter.LabelFrame):
             master, text="Choose a date", command=getdate)
         dateTextButton.grid(row=3, column=0, padx=5, pady=2, sticky="E")
         dateTextButton.config(width=12)
-
-class cpCred():
-    def __init__(self, username, password):
-        self.username = uesrname
-        self.password = password
-
-class emailSettings():
-    def __init__(self, username, password, server, port, to):
-        self.username = username
-        self.password = password
-        self.server = server
-        self.port = port
-        self.to = to
-
-class smsSettings():
-    def __init__(self, accountSID, authToken, sendNumber, recieveNum):
-        self.accountSID = accountSID
-        self.authToken = authToken
-        self.sendNumber = sendNumber
-        self.recieveNum = recieveNum
-
-class iftttSettings():
-    def __init__(self, iftttSecretKey, iftttEventName):
-        self.iftttSecretKey = iftttSecretKey
-        self.iftttEventName = iftttEventName
-
-class pushBulletSettings():
-    def __init__(self, pushBulletAPI):
-        self.PushbulletAPI = pushBulletAPI
-
-class options():
-    def __init__(self, sendBy, end, debug):
-        self.sendBy = sendBy
-        self.end = end
-        self.debug = debug
-
-    def sendMethod(self):
-        # SEND_METHOD defaults to 1 (Email)
-        if self.sendBy == "EMAIL":
-            self.sendMethod = 1
-        elif self.sendBy == "SMS":
-            self.sendMethod = 2
-        elif self.sendBy == "IFTTT":
-            self.sendMethod = 3
-        elif self.sendBy == "PB":
-            self.sendMethod = 4
-        else:
-            self.sendMethod = 1
-        return self.sendMethod
+    def set(self,date):
+        self.selected_date.set(date)
 
 def quitApplication():
     if messagebox.askyesno("Quit", "Do you really wish to quit?"):
@@ -147,7 +103,6 @@ class configForm(tkinter.Tk):
 
         self.endDateTxt = CalendarFrame(self.stepOne)
         self.endDateTxt.grid(sticky='W')
-
         self.testLoginBtn = tkinter.Button(self.stepOne, text="Test Login", command=self.checkLogin)
         self.testLoginBtn.grid(row=4, column=1, sticky='E', padx=5, pady=2)
 
@@ -322,27 +277,245 @@ class configForm(tkinter.Tk):
         iconLocation = "{}\\testScripts\\icon.ico".format(cwd)
         self.iconbitmap(r'{}'.format(iconLocation))
 
+
+        fileExists = os.path.isfile("config.ini")
+        self.config = ConfigParser()
+
+        if fileExists:
+            self.readInitialConfigSettings()
+            self.populateData()
+
+    class cpCred():
+        def __init__(self, username, password):
+            self.username = username
+            self.password = password
+
+    class emailSettings():
+        def __init__(self, username, password, server, port, to):
+            self.username = username
+            self.password = password
+            self.server = server
+            self.port = port
+            self.to = to
+
+    class smsSettings():
+        def __init__(self, accountSID, authToken, sendNumber, recieveNum):
+            self.accountSID = accountSID
+            self.authToken = authToken
+            self.sendNumber = sendNumber
+            self.recieveNum = recieveNum
+
+    class iftttSettings():
+        def __init__(self, iftttSecretKey, iftttEventName):
+            self.iftttSecretKey = iftttSecretKey
+            self.iftttEventName = iftttEventName
+
+    class pushBulletSettings():
+        def __init__(self, pushBulletAPI):
+            self.pushBulletAPI = pushBulletAPI
+
+    class options():
+        def __init__(self, sendBy, end, debug):
+            self.sendBy = sendBy
+            self.end = end
+            self.debug = debug
+
+        def sendMethod(self):
+            # SEND_METHOD defaults to 1 (Email)
+            if self.sendBy == "EMAIL":
+                self.sendMethod = 1
+            elif self.sendBy == "SMS":
+                self.sendMethod = 2
+            elif self.sendBy == "IFTTT":
+                self.sendMethod = 3
+            elif self.sendBy == "PB":
+                self.sendMethod = 4
+            else:
+                self.sendMethod = 1
+            return self.sendMethod
+
+    def populateData(self):
+        '''
+        Step 1
+        '''
+        self.cpLoginUserText.insert(0,self.userData.username)
+        self.cpLoginPassText.insert(0,self.userData.password)
+        self.sendByVar.set(self.mOptions.sendBy)
+        self.endDateTxt.set(self.mOptions.end)
+        '''
+        Step 2
+        '''
+        self.emailLoginUserText.insert(0,self.email.username)
+        self.emailLoginPassText.insert(0,self.email.password)
+        self.emailServerText.insert(0,self.email.server)
+        self.emailPortText.insert(0,self.email.port)
+        self.emailSendToText.insert(0,self.email.to)
+        '''
+        Step 3
+        '''
+        self.smsAccountSIDText.insert(0,self.sms.accountSID)
+        self.smsAccountAUTHText.insert(0,self.sms.authToken)
+        self.smsSendNumText.insert(0,self.sms.sendNumber)
+        self.smsRecieveNumText.insert(0,self.sms.recieveNum)
+        '''
+        Step 4
+        '''
+        self.iftttSecretKeyText.insert(0,self.ifttt.iftttSecretKey)
+        self.iftttEventNameText.insert(0,self.ifttt.iftttEventName)
+        '''
+        Step 5
+        '''
+        self.pushBulletApiText.insert(0,self.pushBullet.pushBulletAPI)
+
+    def readInitialConfigSettings(self):
+        self.config.read('config.ini')
+        '''
+        CP CALPOLY_CREDENTIALS
+        '''
+        username = self.config['CALPOLY_CREDENTIALS']['USERNAME']
+        password = b64decode(
+            self.config['CALPOLY_CREDENTIALS']['PASSWORD']).decode("utf-8")
+        self.userData = self.cpCred(username,password)
+        '''
+        Email Settings
+        '''
+        emailUsername = self.config['EMAIL_SETTINGS']['LOGIN']
+        emailPassword = b64decode(
+            self.config['EMAIL_SETTINGS']['PASSWORD']).decode("utf-8")
+        emailServer = self.config['EMAIL_SETTINGS']['SERVER']
+        emailPort = int(self.config['EMAIL_SETTINGS']['PORT'])
+        emailTo = self.config['EMAIL_SETTINGS']['TO']
+        self.email = self.emailSettings(emailUsername,emailPassword,emailServer,emailPort,emailTo)
+        '''
+        SMS Settings
+        '''
+        accountSID = self.config['SMS_SETTINGS']['ACCOUNT_SID']
+        authToken = self.config['SMS_SETTINGS']['AUTH_TOKEN']
+        sendNumber = self.config['SMS_SETTINGS']['SENDING_NUMBER']
+        recieveNum = self.config['SMS_SETTINGS']['RECEIVING_NUMBER']
+        self.sms = self.smsSettings(accountSID,authToken,sendNumber,recieveNum)
+        '''
+        IFTTT Settings
+        '''
+        iftttSecretKey = self.config['IFTTT_SETTINGS']['IFTTT_SECRETKEY']
+        iftttEventName = self.config['IFTTT_SETTINGS']['IFTTT_EVENTNAME']
+        self.ifttt = self.iftttSettings(iftttSecretKey,iftttEventName)
+        '''
+        Misc. Options
+        '''
+        debug = int(self.config['OPTIONS']['DEBUG'])
+        sendBy = self.config['OPTIONS']['SEND_BY'].upper()
+        end = self.config['OPTIONS']['END']
+        self.mOptions = self.options(sendBy,end,debug)
+        '''
+        PushBullet
+        '''
+        pushBulletAPI = self.config['PUSHBULLET']['API']
+        self.pushBullet = self.pushBulletSettings(pushBulletAPI)
+
+
+        if self.mOptions.sendBy == "EMAIL" and (self.email.username == self.userData.username):
+            self.mOptions.sendBy = "CP Email"
+        elif self.mOptions.sendBy == "SMS":
+            self.mOptions.sendBy = "SMS"
+        elif self.mOptions.sendBy == "IFTTT":
+            self.mOptions.sendBy = "IFTTT"
+        elif self.mOptions.sendBy == "PB":
+            self.mOptions.sendBy = "Pushbullet"
+        else:
+            self.mOptions.sendBy = "Other Email"
+
+
+    '''
+    Should be able to delete once the two scripts are integrated
+    '''
+
     def checkLogin(self):
+        self.loginUser(self.cpLoginUserText.get(),self.cpLoginPassText.get())
+        result = self.loginTest()
         print(self.cpLoginUserText.get())
-        loginTest = tkinter.Label(self.stepOne, text="Login Successful")
+        print(result)
+        if result:
+            loginTest = tkinter.Label(self.stepOne, text="Login Successful")
+        else:
+            loginTest = tkinter.Label(self.stepOne, text="Login Unsuccessful", fg="red")
         loginTest.grid(row=4, column=0, sticky='E', padx=5, pady=2)
 
+    def loginUser(self,username, password):
+        print (username)
+        self.session_requests = requests.session()  # Initalize web session
+        result = self.session_requests.get("https://my.calpoly.edu/cas/login")  # Get page data for login
+        login_html = lxml.html.fromstring(result.text)
+        # Looks for all hidden inputs (mainly for CSRF token)
+        hidden_inputs = login_html.xpath(r'//form//input[@type="hidden"]')
+
+    # ========================================================
+    # Dictionary for login
+    # ========================================================
+
+        # Add the hidden inputs to login dictionary
+        form = {x.attrib["name"]: x.attrib["value"] for x in hidden_inputs}
+        # Add global username and password to login dictionary
+        form['username'] = username
+        form['password'] = password
+        self.session_requests.post(  # post data to login URL
+            "https://my.calpoly.edu/cas/login",
+            data=form,
+        )
+        return self.session_requests
+
+    def loginTest(self):
+        cookie = str(self.session_requests.cookies)
+        if "myportal.calpoly.edu" in cookie:
+            return True
+        else:
+            return False
+
+    '''
+    '''
+
     def writeToConfig(self):
-        print(self.cpLoginUserText.get())
+
+        if not(self.cpLoginUserText.get().endswith("@calpoly.edu")):
+            cpLoginUser = self.cpLoginUserText.get() + "@calpoly.edu"
+        else:
+            cpLoginUser = self.cpLoginUserText.get()
+
+        if self.sendByVar.get() == "CP Email":
+            sendByMethod = "EMAIL"
+            emailLoginUser = cpLoginUser
+            emailLoginPass = self.cpLoginPassText.get()
+            emailPort = "587"
+            emailServer = "smtp.office365.com"
+            emailTo = cpLoginUser
+        elif self.sendByVar.get() == "Other Email":
+            sendByVar = "EMAIL"
+            emailLoginUser = self.emailLoginUserText.get()
+            emailLoginPass = self.emailLoginPassText.get()
+            emailPort = self.emailPortText.get()
+            emailServer = self.emailServerText.get()
+            emailTo = self.emailSendToText.get()
+        elif self.sendByVar.get() == "PushBullet":
+            sendByMethod = "PB"
+        elif self.sendByVar.get() == "SMS":
+            sendByMethod = "SMS"
+        elif self.sendByVar.get() == "IFTTT":
+            sendByMethod = "IFTTT"
+
         configSettings = ConfigParser()
         configSettings.read("config01.ini")
         cpLoginPassTextEncoded = b64encode(bytes(self.cpLoginPassText.get(), "utf-8")).decode("utf-8")
-        emailLoginPassTextEncoded = b64encode(bytes(self.emailLoginPassText.get(), "utf-8")).decode("utf-8")
+        emailLoginPassTextEncoded = b64encode(bytes(emailLoginPass, "utf-8")).decode("utf-8")
         configSettings['CALPOLY_CREDENTIALS'] = {
-            'USERNAME': self.cpLoginUserText.get(), 'PASSWORD': cpLoginPassTextEncoded}
-        configSettings['EMAIL_SETTINGS'] = {'LOGIN': self.emailLoginUserText.get(), 'PASSWORD': emailLoginPassTextEncoded,
-                                    'SERVER': self.emailServerText.get(), 'PORT': self.emailPortText.get(), 'TO': self.emailSendToText.get()}
+            'USERNAME': cpLoginUser, 'PASSWORD': cpLoginPassTextEncoded}
+        configSettings['EMAIL_SETTINGS'] = {'LOGIN': emailLoginUser, 'PASSWORD': emailLoginPassTextEncoded,
+                                    'SERVER': emailServer, 'PORT': emailPort, 'TO': emailTo}
         configSettings['SMS_SETTINGS'] = {
             'ACCOUNT_SID': self.smsAccountSIDText.get(), 'AUTH_TOKEN': self.smsAccountAUTHText.get(), 'SENDING_NUMBER': self.smsSendNumText.get(), 'RECEIVING_NUMBER': self.smsRecieveNumText.get()}
         configSettings['IFTTT_SETTINGS'] = {
             'IFTTT_SECRETKEY': self.iftttSecretKeyText.get(), 'IFTTT_EVENTNAME': self.iftttEventNameText.get()}
         configSettings['PUSHBULLET'] = {'API': ''}
-        configSettings['OPTIONS'] = {'SEND_BY': self.sendByVar.get(),
+        configSettings['OPTIONS'] = {'SEND_BY': sendByMethod.upper(),
                              'END': getDate, 'DEBUG': 0}
         print(configSettings._sections)
         with open('config01.ini', 'w') as configfile:
