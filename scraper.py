@@ -270,7 +270,7 @@ class getBalance():
     # Login
     # ========================================================
 
-    def loginUser(self,username, password):
+    def loginUser(self,username,password):
 
         self.session_requests = requests.session()  # Initalize web session
         result = self.session_requests.get(self.loginURL)  # Get page data for login
@@ -288,14 +288,15 @@ class getBalance():
         form['username'] = username
         form['password'] = password
         self.session_requests.post(  # post data to login URL
-            loginURL,
+            self.loginURL,
             data=form,
         )
         return self.session_requests
 
     def loginTest(self):
         cookie = str(self.session_requests.cookies)
-        if "my.calpoly.edu/cas" in cookie:
+        print(cookie)
+        if "myportal.calpoly.edu" in cookie:
             return True
         else:
             return False

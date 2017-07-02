@@ -6,10 +6,11 @@ from tkinter import messagebox
 import tkSimpleDialog
 from configparser import *
 from base64 import *
-
+import scraper
 
 import requests
 import lxml.html
+
 
 class CalendarDialog(tkSimpleDialog.Dialog):
     """Dialog box that displays a calendar and returns the selected date"""
@@ -31,8 +32,6 @@ class CalendarFrame(tkinter.LabelFrame):
             result = cd.result
             # Change this to "%Y,%-m,%-d" on linux
             self.selected_date.set(result.strftime("%Y,%#m,%#d"))
-            global getDate
-            getDate = self.selected_date.get()
             # return self.selected_date
         self.selected_date = tkinter.StringVar()
         dateTextField = tkinter.Entry(master, textvariable=self.selected_date)
@@ -42,8 +41,12 @@ class CalendarFrame(tkinter.LabelFrame):
             master, text="Choose a date", command=getdate)
         dateTextButton.grid(row=3, column=0, padx=5, pady=2, sticky="E")
         dateTextButton.config(width=12)
-    def set(self,date):
+    def get(self):
+        return self.selected_date.get()
+
+    def set(self, date):
         self.selected_date.set(date)
+
 
 def quitApplication():
     if messagebox.askyesno("Quit", "Do you really wish to quit?"):
@@ -61,6 +64,8 @@ class configForm(tkinter.Tk):
         Set form title
         '''
 
+        self.loginCheckFlag = False
+
         tkinter.Tk.__init__(self)
 
         self.resizable(0, 0)
@@ -75,7 +80,8 @@ class configForm(tkinter.Tk):
         self.stepOne.grid(row=0, columnspan=7, sticky='WE',
                           padx=5, pady=5, ipadx=5, ipady=5)
 
-        self.cpLoginUserLbl = tkinter.Label(self.stepOne, text="Cal Poly Uesrname:")
+        self.cpLoginUserLbl = tkinter.Label(
+            self.stepOne, text="Cal Poly Uesrname:")
         self.cpLoginUserLbl.grid(row=0, column=0, sticky='E', padx=5, pady=2)
 
         self.cpLoginUserText = tkinter.Entry(self.stepOne)
@@ -83,7 +89,8 @@ class configForm(tkinter.Tk):
         self.cpLoginUserText.grid(
             row=0, column=1, columnspan=7, sticky="W", pady=3)
 
-        self.cpLoginPassLbl = tkinter.Label(self.stepOne, text="Cal Poly Password:")
+        self.cpLoginPassLbl = tkinter.Label(
+            self.stepOne, text="Cal Poly Password:")
         self.cpLoginPassLbl.grid(row=1, column=0, sticky='E', padx=5, pady=2)
 
         self.cpLoginPassText = tkinter.Entry(self.stepOne, show="\u2022")
@@ -103,7 +110,8 @@ class configForm(tkinter.Tk):
 
         self.endDateTxt = CalendarFrame(self.stepOne)
         self.endDateTxt.grid(sticky='W')
-        self.testLoginBtn = tkinter.Button(self.stepOne, text="Test Login", command=self.checkLogin)
+        self.testLoginBtn = tkinter.Button(
+            self.stepOne, text="Test Login", command=self.checkLogin)
         self.testLoginBtn.grid(row=4, column=1, sticky='E', padx=5, pady=2)
 
         '''
@@ -127,7 +135,8 @@ class configForm(tkinter.Tk):
         self.stepTwo.grid(row=3, columnspan=7, sticky='WE',
                           padx=5, pady=5, ipadx=5, ipady=5)
 
-        self.emailLoginUserLbl = tkinter.Label(self.stepTwo, text="Email Uesrname:")
+        self.emailLoginUserLbl = tkinter.Label(
+            self.stepTwo, text="Email Uesrname:")
         self.emailLoginUserLbl.grid(
             row=0, column=0, sticky='E', padx=5, pady=2)
 
@@ -135,7 +144,8 @@ class configForm(tkinter.Tk):
         self.emailLoginUserText.grid(
             row=0, column=1, columnspan=40, sticky="WE", pady=3)
 
-        self.emailLoginPassLbl = tkinter.Label(self.stepTwo, text="Email Password:")
+        self.emailLoginPassLbl = tkinter.Label(
+            self.stepTwo, text="Email Password:")
         self.emailLoginPassLbl.grid(
             row=1, column=0, sticky='E', padx=5, pady=2)
 
@@ -144,7 +154,8 @@ class configForm(tkinter.Tk):
         self.emailLoginPassText.grid(
             row=1, column=1, columnspan=40, sticky="WE", pady=3)
 
-        self.emailServerLbl = tkinter.Label(self.stepTwo, text="    Email Server:")
+        self.emailServerLbl = tkinter.Label(
+            self.stepTwo, text="    Email Server:")
         self.emailServerLbl.grid(row=2, column=0, sticky='E', padx=5, pady=2)
 
         self.emailServerText = tkinter.Entry(self.stepTwo)
@@ -196,7 +207,8 @@ class configForm(tkinter.Tk):
         self.smsAccountAUTHText.grid(
             row=1, column=1, columnspan=40, sticky="EE", pady=3)
 
-        self.smsSendNumLbl = tkinter.Label(self.stepThree, text="Sending Number:")
+        self.smsSendNumLbl = tkinter.Label(
+            self.stepThree, text="Sending Number:")
         self.smsSendNumLbl.grid(row=2, column=0, sticky='E', padx=5, pady=2)
 
         self.smsSendNumText = tkinter.Entry(self.stepThree)
@@ -222,7 +234,8 @@ class configForm(tkinter.Tk):
         self.stepFour.grid(row=5, columnspan=7, sticky='WE',
                            padx=5, pady=5, ipadx=5, ipady=5)
 
-        self.iftttSecretKeyLbl = tkinter.Label(self.stepFour, text="IFTTT Secret:")
+        self.iftttSecretKeyLbl = tkinter.Label(
+            self.stepFour, text="IFTTT Secret:")
         self.iftttSecretKeyLbl.grid(
             row=0, column=0, sticky='E', padx=5, pady=2)
 
@@ -251,7 +264,8 @@ class configForm(tkinter.Tk):
         self.stepFive.grid(row=6, columnspan=7, sticky='WE',
                            padx=5, pady=5, ipadx=5, ipady=5)
 
-        self.pushBulletApiLbl = tkinter.Label(self.stepFive, text="Pushbullet API:")
+        self.pushBulletApiLbl = tkinter.Label(
+            self.stepFive, text="Pushbullet API:")
         self.pushBulletApiLbl.grid(row=1, column=0, sticky='E', padx=5, pady=2)
 
         self.pushBulletApiText = tkinter.Entry(self.stepFive)
@@ -263,7 +277,8 @@ class configForm(tkinter.Tk):
         Save/Quit/etc buttons
         '''
 
-        self.saveExit = tkinter.Button(self, text="Save and Exit", command=self.askToSave)
+        self.saveExit = tkinter.Button(
+            self, text="Save and Exit", command=self.askToSave)
         self.saveExit.grid(row=7, column=0, sticky='W', padx=5, pady=2)
 
         self.saveRun = tkinter.Button(self, text="Save and Run")
@@ -276,7 +291,6 @@ class configForm(tkinter.Tk):
         cwd = os.getcwd()
         iconLocation = "{}\\testScripts\\icon.ico".format(cwd)
         self.iconbitmap(r'{}'.format(iconLocation))
-
 
         fileExists = os.path.isfile("config.ini")
         self.config = ConfigParser()
@@ -338,34 +352,34 @@ class configForm(tkinter.Tk):
         '''
         Step 1
         '''
-        self.cpLoginUserText.insert(0,self.userData.username)
-        self.cpLoginPassText.insert(0,self.userData.password)
+        self.cpLoginUserText.insert(0, self.userData.username)
+        self.cpLoginPassText.insert(0, self.userData.password)
         self.sendByVar.set(self.mOptions.sendBy)
         self.endDateTxt.set(self.mOptions.end)
         '''
         Step 2
         '''
-        self.emailLoginUserText.insert(0,self.email.username)
-        self.emailLoginPassText.insert(0,self.email.password)
-        self.emailServerText.insert(0,self.email.server)
-        self.emailPortText.insert(0,self.email.port)
-        self.emailSendToText.insert(0,self.email.to)
+        self.emailLoginUserText.insert(0, self.email.username)
+        self.emailLoginPassText.insert(0, self.email.password)
+        self.emailServerText.insert(0, self.email.server)
+        self.emailPortText.insert(0, self.email.port)
+        self.emailSendToText.insert(0, self.email.to)
         '''
         Step 3
         '''
-        self.smsAccountSIDText.insert(0,self.sms.accountSID)
-        self.smsAccountAUTHText.insert(0,self.sms.authToken)
-        self.smsSendNumText.insert(0,self.sms.sendNumber)
-        self.smsRecieveNumText.insert(0,self.sms.recieveNum)
+        self.smsAccountSIDText.insert(0, self.sms.accountSID)
+        self.smsAccountAUTHText.insert(0, self.sms.authToken)
+        self.smsSendNumText.insert(0, self.sms.sendNumber)
+        self.smsRecieveNumText.insert(0, self.sms.recieveNum)
         '''
         Step 4
         '''
-        self.iftttSecretKeyText.insert(0,self.ifttt.iftttSecretKey)
-        self.iftttEventNameText.insert(0,self.ifttt.iftttEventName)
+        self.iftttSecretKeyText.insert(0, self.ifttt.iftttSecretKey)
+        self.iftttEventNameText.insert(0, self.ifttt.iftttEventName)
         '''
         Step 5
         '''
-        self.pushBulletApiText.insert(0,self.pushBullet.pushBulletAPI)
+        self.pushBulletApiText.insert(0, self.pushBullet.pushBulletAPI)
 
     def readInitialConfigSettings(self):
         self.config.read('config.ini')
@@ -375,7 +389,7 @@ class configForm(tkinter.Tk):
         username = self.config['CALPOLY_CREDENTIALS']['USERNAME']
         password = b64decode(
             self.config['CALPOLY_CREDENTIALS']['PASSWORD']).decode("utf-8")
-        self.userData = self.cpCred(username,password)
+        self.userData = self.cpCred(username, password)
         '''
         Email Settings
         '''
@@ -385,7 +399,8 @@ class configForm(tkinter.Tk):
         emailServer = self.config['EMAIL_SETTINGS']['SERVER']
         emailPort = int(self.config['EMAIL_SETTINGS']['PORT'])
         emailTo = self.config['EMAIL_SETTINGS']['TO']
-        self.email = self.emailSettings(emailUsername,emailPassword,emailServer,emailPort,emailTo)
+        self.email = self.emailSettings(
+            emailUsername, emailPassword, emailServer, emailPort, emailTo)
         '''
         SMS Settings
         '''
@@ -393,26 +408,26 @@ class configForm(tkinter.Tk):
         authToken = self.config['SMS_SETTINGS']['AUTH_TOKEN']
         sendNumber = self.config['SMS_SETTINGS']['SENDING_NUMBER']
         recieveNum = self.config['SMS_SETTINGS']['RECEIVING_NUMBER']
-        self.sms = self.smsSettings(accountSID,authToken,sendNumber,recieveNum)
+        self.sms = self.smsSettings(
+            accountSID, authToken, sendNumber, recieveNum)
         '''
         IFTTT Settings
         '''
         iftttSecretKey = self.config['IFTTT_SETTINGS']['IFTTT_SECRETKEY']
         iftttEventName = self.config['IFTTT_SETTINGS']['IFTTT_EVENTNAME']
-        self.ifttt = self.iftttSettings(iftttSecretKey,iftttEventName)
+        self.ifttt = self.iftttSettings(iftttSecretKey, iftttEventName)
         '''
         Misc. Options
         '''
         debug = int(self.config['OPTIONS']['DEBUG'])
         sendBy = self.config['OPTIONS']['SEND_BY'].upper()
         end = self.config['OPTIONS']['END']
-        self.mOptions = self.options(sendBy,end,debug)
+        self.mOptions = self.options(sendBy, end, debug)
         '''
         PushBullet
         '''
         pushBulletAPI = self.config['PUSHBULLET']['API']
         self.pushBullet = self.pushBulletSettings(pushBulletAPI)
-
 
         if self.mOptions.sendBy == "EMAIL" and (self.email.username == self.userData.username):
             self.mOptions.sendBy = "CP Email"
@@ -425,105 +440,98 @@ class configForm(tkinter.Tk):
         else:
             self.mOptions.sendBy = "Other Email"
 
-
-    '''
-    Should be able to delete once the two scripts are integrated
-    '''
-
     def checkLogin(self):
-        self.loginUser(self.cpLoginUserText.get(),self.cpLoginPassText.get())
-        result = self.loginTest()
-        print(self.cpLoginUserText.get())
-        print(result)
+        loginCheckTest = tkinter.StringVar()
+        loginTest = tkinter.Label(self.stepOne, textvariable=loginCheckTest)
+        loginTest.grid(row=4, column=0, sticky='W', padx=5, pady=2)
+        loginCheckTest.set("Checking Login...")
+        loginChecker = scraper.getBalance()
+        loginChecker.loginUser(self.cpLoginUserText.get(),
+                               self.cpLoginPassText.get())
+        result = loginChecker.loginTest()
         if result:
-            loginTest = tkinter.Label(self.stepOne, text="Login Successful")
+            loginCheckTest.set("Login Successful.")
+            self.loginCheckFlag = True
         else:
-            loginTest = tkinter.Label(self.stepOne, text="Login Unsuccessful", fg="red")
-        loginTest.grid(row=4, column=0, sticky='E', padx=5, pady=2)
-
-    def loginUser(self,username, password):
-        print (username)
-        self.session_requests = requests.session()  # Initalize web session
-        result = self.session_requests.get("https://my.calpoly.edu/cas/login")  # Get page data for login
-        login_html = lxml.html.fromstring(result.text)
-        # Looks for all hidden inputs (mainly for CSRF token)
-        hidden_inputs = login_html.xpath(r'//form//input[@type="hidden"]')
-
-    # ========================================================
-    # Dictionary for login
-    # ========================================================
-
-        # Add the hidden inputs to login dictionary
-        form = {x.attrib["name"]: x.attrib["value"] for x in hidden_inputs}
-        # Add global username and password to login dictionary
-        form['username'] = username
-        form['password'] = password
-        self.session_requests.post(  # post data to login URL
-            "https://my.calpoly.edu/cas/login",
-            data=form,
-        )
-        return self.session_requests
-
-    def loginTest(self):
-        cookie = str(self.session_requests.cookies)
-        if "myportal.calpoly.edu" in cookie:
-            return True
-        else:
-            return False
-
-    '''
-    '''
+            loginCheckTest.set("Login Unsuccessful.")
 
     def writeToConfig(self):
 
-        if not(self.cpLoginUserText.get().endswith("@calpoly.edu")):
-            cpLoginUser = self.cpLoginUserText.get() + "@calpoly.edu"
+        print(self.loginCheckFlag)
+        self.checkLogin()
+        print(self.loginCheckFlag)
+        if self.loginCheckFlag:
+            if not(self.cpLoginUserText.get().endswith("@calpoly.edu")):
+                cpLoginUser = self.cpLoginUserText.get() + "@calpoly.edu"
+            else:
+                cpLoginUser = self.cpLoginUserText.get()
+
+            print(cpLoginUser)
+
+            if self.sendByVar.get() == "CP Email":
+                sendByMethod = "EMAIL"
+                emailLoginUser = cpLoginUser
+                emailLoginPass = self.cpLoginPassText.get()
+                emailPort = "587"
+                emailServer = "smtp.office365.com"
+                emailTo = cpLoginUser
+            elif self.sendByVar.get() == "Other Email":
+                sendByVar = "EMAIL"
+                emailLoginUser = self.emailLoginUserText.get()
+                emailLoginPass = self.emailLoginPassText.get()
+                emailPort = self.emailPortText.get()
+                emailServer = self.emailServerText.get()
+                emailTo = self.emailSendToText.get()
+            elif self.sendByVar.get() == "Pushbullet":
+                sendByMethod = "PB"
+                emailLoginUser = self.emailLoginUserText.get()
+                emailLoginPass = self.emailLoginPassText.get()
+                emailPort = self.emailPortText.get()
+                emailServer = self.emailServerText.get()
+                emailTo = self.emailSendToText.get()
+            elif self.sendByVar.get() == "SMS":
+                sendByMethod = "SMS"
+                emailLoginUser = self.emailLoginUserText.get()
+                emailLoginPass = self.emailLoginPassText.get()
+                emailPort = self.emailPortText.get()
+                emailServer = self.emailServerText.get()
+                emailTo = self.emailSendToText.get()
+            elif self.sendByVar.get() == "IFTTT":
+                sendByMethod = "IFTTT"
+                emailLoginUser = self.emailLoginUserText.get()
+                emailLoginPass = self.emailLoginPassText.get()
+                emailPort = self.emailPortText.get()
+                emailServer = self.emailServerText.get()
+                emailTo = self.emailSendToText.get()
+
+            configSettings = ConfigParser()
+            configSettings.read("config.ini")
+            cpLoginPassTextEncoded = b64encode(
+                bytes(self.cpLoginPassText.get(), "utf-8")).decode("utf-8")
+            emailLoginPassTextEncoded = b64encode(
+                bytes(emailLoginPass, "utf-8")).decode("utf-8")
+            configSettings['CALPOLY_CREDENTIALS'] = {
+                'USERNAME': cpLoginUser, 'PASSWORD': cpLoginPassTextEncoded}
+            configSettings['EMAIL_SETTINGS'] = {'LOGIN': emailLoginUser, 'PASSWORD': emailLoginPassTextEncoded,
+                                                'SERVER': emailServer, 'PORT': emailPort, 'TO': emailTo}
+            configSettings['SMS_SETTINGS'] = {
+                'ACCOUNT_SID': self.smsAccountSIDText.get(), 'AUTH_TOKEN': self.smsAccountAUTHText.get(), 'SENDING_NUMBER': self.smsSendNumText.get(), 'RECEIVING_NUMBER': self.smsRecieveNumText.get()}
+            configSettings['IFTTT_SETTINGS'] = {
+                'IFTTT_SECRETKEY': self.iftttSecretKeyText.get(), 'IFTTT_EVENTNAME': self.iftttEventNameText.get()}
+            configSettings['PUSHBULLET'] = {'API': ''}
+            configSettings['OPTIONS'] = {'SEND_BY': sendByMethod.upper(),
+                                         'END': self.endDateTxt.get(), 'DEBUG': 0}
+            print(configSettings._sections)
+            with open('config.ini', 'w') as configfile:
+                configSettings.write(configfile)
         else:
-            cpLoginUser = self.cpLoginUserText.get()
-
-        if self.sendByVar.get() == "CP Email":
-            sendByMethod = "EMAIL"
-            emailLoginUser = cpLoginUser
-            emailLoginPass = self.cpLoginPassText.get()
-            emailPort = "587"
-            emailServer = "smtp.office365.com"
-            emailTo = cpLoginUser
-        elif self.sendByVar.get() == "Other Email":
-            sendByVar = "EMAIL"
-            emailLoginUser = self.emailLoginUserText.get()
-            emailLoginPass = self.emailLoginPassText.get()
-            emailPort = self.emailPortText.get()
-            emailServer = self.emailServerText.get()
-            emailTo = self.emailSendToText.get()
-        elif self.sendByVar.get() == "PushBullet":
-            sendByMethod = "PB"
-        elif self.sendByVar.get() == "SMS":
-            sendByMethod = "SMS"
-        elif self.sendByVar.get() == "IFTTT":
-            sendByMethod = "IFTTT"
-
-        configSettings = ConfigParser()
-        configSettings.read("config01.ini")
-        cpLoginPassTextEncoded = b64encode(bytes(self.cpLoginPassText.get(), "utf-8")).decode("utf-8")
-        emailLoginPassTextEncoded = b64encode(bytes(emailLoginPass, "utf-8")).decode("utf-8")
-        configSettings['CALPOLY_CREDENTIALS'] = {
-            'USERNAME': cpLoginUser, 'PASSWORD': cpLoginPassTextEncoded}
-        configSettings['EMAIL_SETTINGS'] = {'LOGIN': emailLoginUser, 'PASSWORD': emailLoginPassTextEncoded,
-                                    'SERVER': emailServer, 'PORT': emailPort, 'TO': emailTo}
-        configSettings['SMS_SETTINGS'] = {
-            'ACCOUNT_SID': self.smsAccountSIDText.get(), 'AUTH_TOKEN': self.smsAccountAUTHText.get(), 'SENDING_NUMBER': self.smsSendNumText.get(), 'RECEIVING_NUMBER': self.smsRecieveNumText.get()}
-        configSettings['IFTTT_SETTINGS'] = {
-            'IFTTT_SECRETKEY': self.iftttSecretKeyText.get(), 'IFTTT_EVENTNAME': self.iftttEventNameText.get()}
-        configSettings['PUSHBULLET'] = {'API': ''}
-        configSettings['OPTIONS'] = {'SEND_BY': sendByMethod.upper(),
-                             'END': getDate, 'DEBUG': 0}
-        print(configSettings._sections)
-        with open('config01.ini', 'w') as configfile:
-            configSettings.write(configfile)
+            messagebox.showerror(
+                "Error", "Unable to login to CP Servers.")
 
     def askToSave(self):
         if messagebox.askyesno("Save Information", "The information in the password fields are bas64 decoded. Do you understand the risks associated with using this progam. Please note, all login data is only supplied to Cal Poly."):
             self.writeToConfig()
+
 
 if __name__ == '__main__':
     form = configForm()
